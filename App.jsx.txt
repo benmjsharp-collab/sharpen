@@ -776,7 +776,7 @@ function Dawn({ done, total, name, line, dateLabel }) {
   const sunY = 182 - f * 140;
   const sky = f < 0.5 ? C.night : "#1D2B45";
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", maxWidth: 560, margin: "0 auto" }}>
       <svg viewBox="0 0 360 190" style={{ width: "100%", display: "block" }} aria-hidden="true">
         <defs>
           <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
