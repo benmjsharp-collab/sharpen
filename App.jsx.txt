@@ -1,0 +1,1902 @@
+import { useState, useEffect, useRef } from "react";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from "recharts";
+import {
+  Sunrise, Dumbbell, TrendingUp, BookOpen, MessageCircle, Check, Plus, Minus, ChevronLeft,
+  ChevronRight, X, CalendarDays, Droplets, Footprints, Armchair, Moon, Send, Timer, Heart, Egg, Syringe, Copy,
+  Download, Upload
+} from "lucide-react";
+
+/* ---------- palette & helpers ---------- */
+const C = {
+  night: "#131B2A", deep: "#1A2537", panel: "#223049", line: "#33455F", mist: "#93A3BA",
+  paper: "#EAEEF3", sun: "#F4A259", ember: "#E9803F", sage: "#8CCBAE", rose: "#E58374",
+};
+const TZ = "Pacific/Auckland";
+const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+const nzHour = () => {
+  const h = parseInt(new Date().toLocaleString("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false }), 10);
+  return isNaN(h) ? 12 : h % 24;
+};
+const keyDate = (k) => new Date(k + "T12:00:00Z");
+const addDays = (k, n) => { const d = keyDate(k); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const dowOf = (k) => keyDate(k).getUTCDay();
+const weekStart = (k) => addDays(k, -((dowOf(k) + 6) % 7));
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DOWL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const fmtDate = (k) => keyDate(k).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+const fmtShort = (k) => keyDate(k).toLocaleDateString("en-NZ", { day: "numeric", month: "short", timeZone: "UTC" });
+const r25 = (x) => Math.round(x / 2.5) * 2.5;
+const REDUCED = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- exercise figures (animated line drawings) ---------- */
+const ST = { h: [50, 16], s: [50, 27], p: [50, 54], k: [50, 73], a: [50, 93], e: [50, 40], w: [50, 52] };
+const FR = { h: [50, 16], s: [50, 27], p: [50, 54], k: [46, 73], a: [45, 93], k2: [54, 73], a2: [55, 93], e: [43, 40], w: [42, 52], e2: [57, 40], w2: [58, 52] };
+const HINGE = { h: [74, 41], s: [66, 44], p: [38, 53], k: [45, 72], a: [48, 93] };
+const SQB = { h: [48, 36], s: [45, 46], p: [34, 68], k: [58, 70], a: [50, 93] };
+const BENCHB = { h: [14, 57], s: [24, 60], p: [56, 60], k: [70, 64], a: [74, 93] };
+const INCB = { h: [21, 34], s: [27, 44], p: [50, 66], k: [66, 63], a: [72, 93] };
+const QUAD = { h: [80, 70], s: [72, 66], m: [57, 64], p: [42, 66], k: [42, 92], a: [22, 92], f: [19, 94], e: [72, 80], w: [72, 93] };
+const BIKEB = { h: [62, 19], s: [56, 28], p: [40, 46], e: [66, 36], w: [73, 40] };
+const CHAIR = { h: [44, 23], s: [44, 34], p: [44, 62], k: [64, 62], a: [64, 93] };
+const up = (o, dy) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, [v[0], v[1] + dy]]));
+
+const POSES = {
+  stand: { a: ST, b: ST },
+  squat: { a: { ...ST, k: [51, 73], e: [42, 31], w: [47, 25] }, b: { ...SQB, e: [37, 51], w: [42, 45] }, imp: "bar" },
+  goblet: { a: { ...ST, e: [57, 40], w: [56, 31] }, b: { ...SQB, e: [54, 56], w: [53, 47] }, imp: "kb" },
+  rdl: { a: { ...ST, e: [51, 41], w: [52, 54] }, b: { ...HINGE, e: [66, 58], w: [66, 71] }, imp: "bar" },
+  swing: { a: { ...HINGE, e: [58, 58], w: [50, 70] }, b: { ...ST, e: [64, 31], w: [78, 35] }, imp: "kb" },
+  lunge: {
+    a: { ...ST, k: [55, 73], a: [57, 93], k2: [45, 73], a2: [42, 93], e: [50, 41], w: [50, 53] },
+    b: { h: [50, 34], s: [50, 45], p: [50, 70], k: [64, 72], a: [64, 93], k2: [43, 88], a2: [29, 92], f2: [27, 94], e: [50, 58], w: [50, 70] }, imp: "db",
+  },
+  stepup: {
+    a: { h: [48, 16], s: [48, 27], p: [48, 54], k: [62, 60], a: [64, 78], k2: [48, 74], a2: [48, 93], e: [48, 40], w: [48, 52] },
+    b: { h: [62, 6], s: [62, 17], p: [62, 42], k: [64, 60], a: [64, 78], k2: [57, 62], a2: [59, 77], e: [62, 30], w: [62, 42] }, imp: "db", props: ["box"],
+  },
+  bench: { a: { ...BENCHB, e: [29, 70], w: [31, 53] }, b: { ...BENCHB, e: [27, 46], w: [28, 34] }, imp: "bar", props: ["bench"] },
+  incline: { a: { ...INCB, e: [35, 54], w: [37, 41] }, b: { ...INCB, e: [32, 32], w: [36, 20] }, imp: "db", props: ["incline"] },
+  pushup: {
+    a: { h: [80, 58], s: [72, 62], p: [44, 72], k: [30, 80], a: [16, 90], f: [14, 94], e: [73, 77], w: [72, 93] },
+    b: { h: [80, 76], s: [70, 80], p: [44, 83], k: [30, 87], a: [16, 90], f: [14, 94], e: [61, 78], w: [72, 93] },
+  },
+  plank: {
+    a: { h: [80, 71], s: [72, 76], p: [46, 78], k: [30, 84], a: [16, 90], f: [14, 94], e: [72, 92], w: [84, 92] },
+    b: { h: [80, 70], s: [72, 75], p: [46, 76], k: [30, 83], a: [16, 90], f: [14, 94], e: [72, 92], w: [84, 92] },
+  },
+  ohp: { a: { ...ST, e: [58, 34], w: [55, 23] }, b: { ...ST, e: [53, 14], w: [51, 2] }, imp: "bar" },
+  dbpress: { a: { ...CHAIR, e: [52, 30], w: [50, 20] }, b: { ...CHAIR, e: [48, 12], w: [46, 0] }, imp: "db", props: ["chair"] },
+  lateral: { front: true, a: FR, b: { ...FR, e: [37, 31], w: [26, 29], e2: [63, 31], w2: [74, 29] }, imp: "db" },
+  row: { a: { ...HINGE, e: [66, 57], w: [66, 70] }, b: { ...HINGE, e: [52, 38], w: [60, 51] }, imp: "bar" },
+  pulldown: { a: { ...ST, e: [56, 14], w: [58, 2] }, b: { ...ST, e: [44, 40], w: [52, 33] }, imp: "band", anchor: [58, -8] },
+  facepull: { a: { ...ST, e: [64, 29], w: [78, 27] }, b: { ...ST, e: [40, 27], w: [52, 19] }, imp: "band", anchor: [98, 26] },
+  curl: { a: { ...ST, e: [51, 41], w: [53, 55] }, b: { ...ST, e: [51, 41], w: [60, 30] }, imp: "bar" },
+  ohtri: { a: { ...ST, e: [55, 6], w: [46, 18] }, b: { ...ST, e: [55, 6], w: [57, -6] }, imp: "db" },
+  legext: {
+    a: { h: [38, 22], s: [38, 33], p: [42, 58], k: [58, 58], a: [59, 84], e: [42, 46], w: [48, 58] },
+    b: { h: [38, 22], s: [38, 33], p: [42, 58], k: [58, 58], a: [82, 56], f: [84, 50], e: [42, 46], w: [48, 58] }, props: ["seat"],
+  },
+  legcurl: {
+    a: { h: [84, 54], s: [76, 59], p: [48, 60], k: [26, 60], a: [8, 60], f: [4, 64], e: [82, 70], w: [88, 63] },
+    b: { h: [84, 54], s: [76, 59], p: [48, 60], k: [26, 60], a: [30, 40], f: [36, 38], e: [82, 70], w: [88, 63] }, props: ["bench"],
+  },
+  calf: { a: { ...ST, f: [56, 93] }, b: { ...up(ST, -9), f: [56, 93] }, imp: "db" },
+  bridge: {
+    a: { h: [14, 87], s: [24, 89], p: [46, 89], k: [60, 72], a: [68, 93], e: [32, 93], w: [42, 93] },
+    b: { h: [14, 87], s: [24, 89], p: [48, 72], k: [63, 70], a: [68, 93], e: [32, 93], w: [42, 93] },
+  },
+  deadbug: {
+    a: { h: [14, 84], s: [24, 87], p: [50, 87], k: [52, 72], a: [64, 71], k2: [52, 72], a2: [64, 71], e: [25, 76], w: [26, 64], e2: [25, 76], w2: [26, 64] },
+    b: { h: [14, 84], s: [24, 87], p: [50, 87], k: [66, 83], a: [82, 85], k2: [52, 72], a2: [64, 71], e: [16, 80], w: [6, 84], e2: [25, 76], w2: [26, 64] },
+  },
+  carry: {
+    a: { ...ST, k: [55, 73], a: [58, 93], k2: [46, 73], a2: [42, 93], e: [50, 41], w: [50, 54] },
+    b: { ...ST, k: [46, 73], a: [42, 93], k2: [55, 73], a2: [58, 93], e: [50, 41], w: [50, 54] }, imp: "db",
+  },
+  walk: {
+    a: { ...ST, k: [55, 73], a: [58, 93], k2: [46, 73], a2: [42, 93], e: [54, 40], w: [59, 50], e2: [46, 40], w2: [42, 50] },
+    b: { ...ST, k: [46, 73], a: [42, 93], k2: [55, 73], a2: [58, 93], e: [46, 40], w: [42, 50], e2: [54, 40], w2: [59, 50] },
+  },
+  landmine: { a: { ...ST, k: [54, 73], a: [56, 93], k2: [46, 73], a2: [44, 93], e: [60, 38], w: [60, 27] }, b: { ...ST, k: [54, 73], a: [56, 93], k2: [46, 73], a2: [44, 93], e: [68, 20], w: [78, 10] }, imp: "landmine" },
+  bike: {
+    a: { ...BIKEB, k: [57, 58], a: [60, 72], k2: [50, 66], a2: [44, 84] },
+    b: { ...BIKEB, k: [50, 66], a: [44, 84], k2: [57, 58], a2: [60, 72] }, props: ["bike"],
+  },
+  rower: {
+    a: { h: [50, 45], s: [46, 54], p: [34, 80], k: [48, 62], a: [60, 86], f: [64, 78], e: [58, 63], w: [66, 66] },
+    b: { h: [24, 47], s: [28, 55], p: [34, 80], k: [52, 80], a: [70, 86], f: [74, 78], e: [31, 69], w: [42, 66] }, imp: "chain", props: ["rower"],
+  },
+  hop: { front: true, a: FR, b: up(FR, -6) },
+  armswing: { front: true, a: FR, b: { ...FR, e: [41, 15], w: [37, 3], e2: [59, 15], w2: [63, 3] } },
+  twist: { front: true, a: { ...FR, e: [40, 37], w: [33, 45], e2: [46, 40], w2: [35, 47] }, b: { ...FR, e: [54, 40], w: [65, 47], e2: [60, 37], w2: [67, 45] } },
+  deadarms: { front: true, a: { ...FR, w: [38, 53], w2: [62, 53] }, b: { ...up(FR, -2), e: [41, 38], w: [36, 48], e2: [59, 38], w2: [64, 48] } },
+  march: { a: ST, b: { ...ST, k: [62, 57], a: [60, 74], f: [66, 74], e: [56, 39], w: [62, 48], e2: [44, 40], w2: [42, 52] } },
+  wave: { a: ST, b: { ...ST, h: [45, 17], s: [46, 28], m: [51, 42], p: [55, 54], k: [52, 73], e: [44, 40], w: [42, 52] } },
+  hipflex: {
+    a: { h: [48, 28], s: [48, 39], p: [50, 64], k: [64, 66], a: [66, 93], k2: [44, 92], a2: [28, 92], f2: [25, 94], e: [42, 51], w: [50, 62] },
+    b: { h: [53, 26], s: [53, 37], p: [56, 66], k: [69, 66], a: [67, 93], k2: [44, 92], a2: [28, 92], f2: [25, 94], e: [52, 22], w: [51, 10] },
+  },
+  hamstring: {
+    a: { h: [33, 50], s: [32, 61], p: [30, 90], k: [54, 90], a: [76, 90], f: [78, 83], e: [40, 72], w: [50, 80] },
+    b: { h: [60, 70], s: [52, 75], p: [30, 90], k: [54, 90], a: [76, 90], f: [78, 83], e: [62, 83], w: [74, 87] },
+  },
+  catcow: { a: { ...QUAD, m: [57, 56], h: [80, 74] }, b: { ...QUAD, m: [57, 72], h: [81, 58] } },
+  childpose: { a: QUAD, b: { h: [62, 86], s: [54, 80], m: [44, 78], p: [32, 82], k: [42, 92], a: [22, 92], f: [19, 94], e: [68, 90], w: [84, 92] } },
+  roller: {
+    a: { h: [20, 79], s: [30, 82], p: [56, 88], k: [66, 72], a: [74, 93], e: [20, 70], w: [16, 78] },
+    b: { h: [16, 88], s: [28, 84], p: [56, 88], k: [66, 72], a: [74, 93], e: [14, 76], w: [11, 85] }, props: ["roller"],
+  },
+  chest: { a: ST, b: { ...ST, h: [51, 15], e: [44, 41], w: [37, 51] } },
+  chintuck: { a: { ...ST, h: [54, 16] }, b: { ...ST, h: [46, 17] } },
+  seatedext: { a: { ...CHAIR, e: [36, 22], w: [40, 16] }, b: { ...CHAIR, s: [40, 35], h: [36, 25], e: [30, 24], w: [35, 17] }, props: ["chair"] },
+  skull: { a: { ...BENCHB, e: [26, 40], w: [25, 27] }, b: { ...BENCHB, e: [26, 40], w: [15, 47] }, imp: "bar", props: ["bench"] },
+  abroller: {
+    a: { h: [80, 72], s: [70, 70], m: [56, 68], p: [42, 68], k: [40, 92], a: [20, 92], f: [17, 94], e: [70, 81], w: [70, 90] },
+    b: { h: [88, 80], s: [80, 82], m: [64, 80], p: [48, 80], k: [40, 92], a: [20, 92], f: [17, 94], e: [86, 86], w: [92, 90] }, imp: "wheel",
+  },
+  hipthrust: {
+    a: { h: [14, 87], s: [24, 89], p: [46, 89], k: [60, 72], a: [68, 93], e: [34, 86], w: [46, 84] },
+    b: { h: [14, 87], s: [24, 89], p: [48, 72], k: [63, 70], a: [68, 93], e: [36, 74], w: [49, 67] }, imp: "bar",
+  },
+  squathold: { a: { ...SQB, e: [52, 52], w: [59, 55] }, b: { ...SQB, p: [35, 70], e: [52, 53], w: [59, 56] } },
+  hipswing: { a: { ...ST, k: [58, 72], a: [66, 90], f: [72, 88] }, b: { ...ST, k: [44, 72], a: [36, 90], f: [40, 93] } },
+  quadstretch: {
+    a: { ...ST, k: [50, 73], a: [50, 93], k2: [53, 73], a2: [64, 62], f2: [70, 60], e: [42, 40], w: [38, 30], e2: [57, 45], w2: [62, 59] },
+    b: { ...ST, k: [50, 73], a: [50, 93], k2: [54, 73], a2: [66, 56], f2: [72, 54], e: [42, 40], w: [38, 30], e2: [58, 44], w2: [64, 54] },
+  },
+  neckside: { front: true, a: FR, b: { ...FR, h: [43, 19], s: [50, 28], e2: [61, 24], w2: [50, 13] } },
+  crossbody: { front: true, a: FR, b: { ...FR, e: [63, 33], w: [34, 33], e2: [52, 40], w2: [43, 34] } },
+  groin: {
+    front: true,
+    a: { ...FR, k: [36, 76], a: [30, 93], k2: [64, 76], a2: [70, 93] },
+    b: { ...FR, p: [50, 60], k: [28, 78], a: [20, 93], k2: [72, 78], a2: [80, 93], e: [41, 46], w: [36, 58], e2: [59, 46], w2: [64, 58] },
+  },
+  figure4: {
+    a: { h: [14, 87], s: [24, 89], p: [46, 89], k: [58, 74], a: [66, 92], k2: [66, 72], a2: [56, 76], f2: [54, 74], e: [40, 82], w: [56, 78] },
+    b: { h: [14, 87], s: [24, 89], p: [46, 89], k: [54, 70], a: [62, 86], k2: [62, 66], a2: [52, 70], f2: [50, 68], e: [40, 78], w: [54, 72] },
+  },
+  calfstretch: {
+    a: { h: [68, 24], s: [62, 32], p: [46, 56], k: [60, 74], a: [62, 93], k2: [40, 74], a2: [30, 93], f2: [36, 94], e: [72, 34], w: [84, 30] },
+    b: { h: [70, 26], s: [64, 34], p: [49, 58], k: [62, 74], a: [62, 93], k2: [41, 74], a2: [30, 93], f2: [36, 94], e: [74, 36], w: [84, 30] }, props: ["wall"],
+  },
+  pelvic: { a: { ...CHAIR, e: [50, 48], w: [58, 58] }, b: { ...CHAIR, e: [50, 48], w: [58, 58] }, imp: "pulse", props: ["chair"] },
+};
+
+const pts = (a) => a.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+function fill(f, front) {
+  const g = { ...f };
+  g.k2 = g.k2 || g.k; g.a2 = g.a2 || g.a; g.e2 = g.e2 || g.e; g.w2 = g.w2 || g.w;
+  g.m = g.m || [(g.s[0] + g.p[0]) / 2, (g.s[1] + g.p[1]) / 2];
+  g.f = g.f || (front ? [g.a[0] - 5, g.a[1]] : [g.a[0] + 6, g.a[1]]);
+  g.f2 = g.f2 || (front ? [g.a2[0] + 5, g.a2[1]] : [g.a2[0] + 6, g.a2[1]]);
+  return g;
+}
+function Anim({ attr, a, b, on }) {
+  if (!on) return null;
+  return <animate attributeName={attr} values={`${a};${b};${a}`} dur="2.8s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" />;
+}
+function Poly({ A, B, on, ...r }) {
+  const a = pts(A), b = pts(B);
+  return <polyline points={a} fill="none" strokeLinecap="round" strokeLinejoin="round" {...r}><Anim attr="points" a={a} b={b} on={on} /></polyline>;
+}
+function Dot({ A, B, on, r, ...rest }) {
+  return <circle cx={A[0]} cy={A[1]} r={r} {...rest}><Anim attr="cx" a={A[0]} b={B[0]} on={on} /><Anim attr="cy" a={A[1]} b={B[1]} on={on} /></circle>;
+}
+const off = (q, dx, dy = 0) => [q[0] + dx, q[1] + dy];
+
+function Figure({ pose, imp, play = true, bg = C.panel, label }) {
+  const P = POSES[pose] || POSES.stand;
+  const front = !!P.front;
+  const A = fill(play && !REDUCED ? P.a : P.b, front), B = fill(P.b, front);
+  const on = play && !REDUCED;
+  const I = imp === undefined ? P.imp : imp;
+  const props = P.props || [];
+  const sw = 4.2, col = C.paper;
+  const L = front
+    ? {
+        arm1: [[off(A.s, -7, 1), A.e, A.w], [off(B.s, -7, 1), B.e, B.w]], arm2: [[off(A.s, 7, 1), A.e2, A.w2], [off(B.s, 7, 1), B.e2, B.w2]],
+        leg1: [[off(A.p, -5), A.k, A.a, A.f], [off(B.p, -5), B.k, B.a, B.f]], leg2: [[off(A.p, 5), A.k2, A.a2, A.f2], [off(B.p, 5), B.k2, B.a2, B.f2]],
+      }
+    : {
+        arm1: [[A.s, A.e, A.w], [B.s, B.e, B.w]], arm2: [[A.s, A.e2, A.w2], [B.s, B.e2, B.w2]],
+        leg1: [[A.p, A.k, A.a, A.f], [B.p, B.k, B.a, B.f]], leg2: [[A.p, A.k2, A.a2, A.f2], [B.p, B.k2, B.a2, B.f2]],
+      };
+  const back = front ? 1 : 0.42;
+  const stroke = { stroke: col, strokeWidth: sw };
+  return (
+    <svg viewBox="0 -10 100 106" role="img" aria-label={label || pose} style={{ width: "100%", height: "100%", display: "block" }}>
+      <line x1="2" y1="94.5" x2="98" y2="94.5" stroke={C.line} strokeWidth="1.5" />
+      {props.includes("bench") && <g fill={C.line}><rect x="12" y="64" width="66" height="5" rx="2" /><rect x="19" y="69" width="3" height="25" /><rect x="68" y="69" width="3" height="25" /></g>}
+      {props.includes("incline") && <g stroke={C.line} strokeWidth="5" strokeLinecap="round" fill="none"><polyline points="18,36 52,70 66,70" /><line x1="56" y1="70" x2="56" y2="93" strokeWidth="3" /></g>}
+      {props.includes("box") && <rect x="56" y="78" width="28" height="16" rx="2" fill={C.line} />}
+      {props.includes("seat") && <g fill={C.line}><rect x="24" y="59" width="36" height="5" rx="2" /><rect x="40" y="64" width="3" height="30" /></g>}
+      {props.includes("chair") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round"><line x1="30" y1="64" x2="58" y2="64" /><line x1="31" y1="64" x2="31" y2="34" /><line x1="33" y1="64" x2="33" y2="93" /><line x1="56" y1="64" x2="56" y2="93" /></g>}
+      {props.includes("bike") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="34" y1="46" x2="46" y2="46" /><line x1="40" y1="47" x2="52" y2="78" /><line x1="52" y1="78" x2="71" y2="44" /><line x1="68" y1="42" x2="77" y2="39" /><circle cx="52" cy="78" r="9" /><line x1="44" y1="93" x2="64" y2="93" /></g>}
+      {props.includes("rower") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="8" y1="88" x2="90" y2="88" /><line x1="28" y1="84" x2="42" y2="84" strokeWidth="5" /><circle cx="84" cy="68" r="9" /><line x1="66" y1="87" x2="70" y2="75" /></g>}
+      {props.includes("wall") && <rect x="86" y="6" width="5" height="88" fill={C.line} />}
+      {props.includes("roller") && <circle cx="31" cy="89" r="5" fill={C.line} />}
+      {I === "band" && <Poly A={[P.anchor, A.w]} B={[P.anchor, B.w]} on={on} stroke={C.sage} strokeWidth="1.6" strokeDasharray="3 2" />}
+      {I === "landmine" && <Poly A={[[6, 93], A.w]} B={[[6, 93], B.w]} on={on} stroke={C.mist} strokeWidth="3" />}
+      {I === "chain" && <Poly A={[A.w, [84, 68]]} B={[B.w, [84, 68]]} on={on} stroke={C.mist} strokeWidth="1.4" />}
+      <g opacity={back}>
+        <Poly A={L.leg2[0]} B={L.leg2[1]} on={on} {...stroke} />
+        <Poly A={L.arm2[0]} B={L.arm2[1]} on={on} {...stroke} />
+      </g>
+      {front && <Poly A={[off(A.s, -7, 1), off(A.s, 7, 1)]} B={[off(B.s, -7, 1), off(B.s, 7, 1)]} on={on} {...stroke} />}
+      {front && <Poly A={[off(A.p, -5), off(A.p, 5)]} B={[off(B.p, -5), off(B.p, 5)]} on={on} {...stroke} />}
+      <Poly A={[A.s, A.m, A.p]} B={[B.s, B.m, B.p]} on={on} {...stroke} strokeWidth={sw + 1.2} />
+      <Poly A={L.leg1[0]} B={L.leg1[1]} on={on} {...stroke} />
+      <Poly A={[A.s, A.h]} B={[B.s, B.h]} on={on} {...stroke} />
+      <Dot A={A.h} B={B.h} on={on} r={6.5} fill={bg} stroke={col} strokeWidth="3.4" />
+      <Poly A={L.arm1[0]} B={L.arm1[1]} on={on} {...stroke} />
+      {I === "bar" && <><Dot A={A.w} B={B.w} on={on} r={6.8} fill={C.sun} /><Dot A={A.w} B={B.w} on={on} r={1.8} fill={bg} /></>}
+      {I === "landmine" && <Dot A={A.w} B={B.w} on={on} r={5} fill={C.sun} />}
+      {I === "db" && <Poly A={[off(A.w, -4), off(A.w, 4)]} B={[off(B.w, -4), off(B.w, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
+      {I === "db" && front && <Poly A={[off(A.w2, -4), off(A.w2, 4)]} B={[off(B.w2, -4), off(B.w2, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
+      {I === "wheel" && <Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} />}
+      {I === "kb" && <Dot A={off(A.w, 0, 5)} B={off(B.w, 0, 5)} on={on} r={5.2} fill={C.sun} />}
+      {I === "pulse" && (
+        <circle cx={A.p[0] + 4} cy={A.p[1] - 2} r="4" fill="none" stroke={C.sun} strokeWidth="2">
+          {on && <animate attributeName="r" values="3;9;3" dur="2.8s" repeatCount="indefinite" />}
+          {on && <animate attributeName="opacity" values="1;0.2;1" dur="2.8s" repeatCount="indefinite" />}
+        </circle>
+      )}
+    </svg>
+  );
+}
+
+/* ---------- exercise library ---------- */
+const EX = {
+  bike: { name: "Easy bike", pose: "bike", g: "warm", cues: ["Easy spin, you could hold a chat", "Let the heart rate creep up, no rush"] },
+  hops: { name: "Lymphatic hopping", pose: "hop", g: "warm", cues: ["Small, soft bounces on the balls of the feet", "Loose shoulders, easy breathing"] },
+  waves: { name: "Body waves", pose: "wave", g: "warm", cues: ["Roll through chest, belly, then hips", "Slow and smooth"] },
+  armswing: { name: "Arm swings", pose: "armswing", g: "warm", cues: ["Big relaxed swings up and down", "Then circles forward and back"] },
+  twist: { name: "Trunk twists", pose: "twist", g: "warm", cues: ["Feet planted, turn from the ribs", "Let the arms follow"] },
+  deadarms: { name: "Dead arms", pose: "deadarms", g: "warm", cues: ["Shake the arms out, totally loose"] },
+  golf: { name: "Golf swings", pose: "twist", g: "warm", cues: ["Slow practice swings both ways", "Rotate through the hips"] },
+  march: { name: "Marches", pose: "march", g: "warm", cues: ["Knee to hip height", "Opposite arm drives"] },
+
+  squat: { name: "Back squat", pose: "squat", g: "strength", inc: 2.5, cues: ["Brace like you're about to be poked in the belly", "Sit down between your heels, chest proud", "Drive up through the whole foot"] },
+  goblet: { name: "Goblet squat", pose: "goblet", g: "strength", inc: 2, cues: ["Hold the bell at your chest", "Elbows inside the knees at the bottom"] },
+  lunge: { name: "DB reverse lunge", pose: "lunge", g: "strength", inc: 2.5, cues: ["Step back long, drop the back knee toward the floor", "Push through the front heel to stand"] },
+  legext: { name: "Leg extension", pose: "legext", g: "strength", inc: 2.5, cues: ["Pause a second at the top", "Three seconds down"] },
+  legcurl: { name: "Leg curl", pose: "legcurl", g: "strength", inc: 2.5, cues: ["Hips pinned to the pad", "Curl the heels up, lower slow"] },
+  calf: { name: "Calf raise", pose: "calf", g: "strength", inc: 2.5, cues: ["Full stretch at the bottom", "Pause high on the toes"] },
+  deadbug: { name: "Dead bug", pose: "deadbug", g: "strength", cues: ["Lower back glued to the floor", "Reach opposite arm and leg away, breathe out"] },
+  plank: { name: "Plank", pose: "plank", g: "strength", cues: ["Squeeze glutes, ribs down", "Straight line, breathe"] },
+  bench: { name: "Bench press", pose: "bench", g: "strength", inc: 2.5, cues: ["Shoulder blades pinned back", "Bar to lower chest, forearms vertical", "Feet planted, press up and slightly back"] },
+  ohp: { name: "Overhead press", pose: "ohp", g: "strength", inc: 2.5, cues: ["Squeeze glutes, ribs down", "Press straight up, head through at the top"] },
+  incline: { name: "Incline DB press", pose: "incline", g: "strength", inc: 2.5, cues: ["Bench at about 30°", "Lower to upper chest, elbows 45° from the body"] },
+  dbpress: { name: "Seated DB shoulder press", pose: "dbpress", g: "strength", inc: 2.5, cues: ["Back supported", "Press up, bring the bells in slightly at the top"] },
+  lateral: { name: "Lateral raise", pose: "lateral", g: "strength", inc: 1, cues: ["Lead with the elbows", "Stop at shoulder height, lower slow"] },
+  pushup: { name: "Push-up (board)", pose: "pushup", g: "strength", cues: ["Body in one straight line", "Chest to the board, elbows back at 45°"] },
+  ohtri: { name: "Overhead triceps extension", pose: "ohtri", g: "strength", inc: 2.5, cues: ["Elbows point at the ceiling", "Lower behind the head, then extend"] },
+  rdl: { name: "Barbell RDL", pose: "rdl", g: "strength", inc: 2.5, cues: ["Soft knees, push hips back to the wall behind you", "Bar slides down the thighs, back flat", "Stand up by squeezing glutes"] },
+  bridge: { name: "Glute bridge", pose: "bridge", g: "strength", inc: 5, cues: ["Chin tucked, ribs down", "Drive through the heels, squeeze hard at the top"] },
+  swing: { name: "Kettlebell swing", pose: "swing", g: "strength", inc: 4, cues: ["A hip snap, not a squat or an arm lift", "Bell floats to chest height"] },
+  stepup: { name: "Box step-up", pose: "stepup", g: "strength", inc: 2.5, cues: ["Whole foot on the box", "Drive through the top leg, don't push off the bottom one"] },
+  carry: { name: "Farmer carry", pose: "carry", g: "strength", inc: 2.5, cues: ["Tall posture, shoulders down", "Short quick steps, breathe"] },
+  row: { name: "Bent-over row", pose: "row", g: "strength", inc: 2.5, cues: ["Hinge to about 45°, back flat", "Pull to the belly button, elbows back"] },
+  pulldown: { name: "Band pulldown", pose: "pulldown", g: "strength", cues: ["Band anchored high on the rack", "Elbows down to the ribs, chest up"] },
+  dbrow: { name: "One-arm DB row", pose: "row", imp: "db", g: "strength", inc: 2.5, cues: ["Hand and knee on the bench", "Pull the dumbbell to your hip"] },
+  facepull: { name: "Band face pull", pose: "facepull", g: "strength", cues: ["Pull the band to your forehead", "Elbows high, squeeze between the shoulder blades"] },
+  curl: { name: "EZ bar curl", pose: "curl", g: "strength", inc: 2.5, cues: ["Elbows pinned at your sides", "No swinging, lower slow"] },
+  landmine: { name: "Landmine press", pose: "landmine", g: "strength", inc: 2.5, cues: ["Staggered stance", "Press up and forward, reach through"] },
+
+  dbrdl: { name: "DB Romanian deadlift", pose: "rdl", imp: "db", g: "strength", inc: 2.5, cues: ["Soft knees, push hips back", "Feel the hamstrings stretch, back flat"] },
+  skull: { name: "EZ bar skullcrusher", pose: "skull", g: "strength", inc: 2.5, cues: ["Lower to the forehead, elbows tucked", "Only the forearms move"] },
+  dbbench: { name: "DB bench press", pose: "bench", imp: "db", g: "strength", inc: 2.5, cues: ["Shoulder blades back and down", "Lower until the bells are level with your chest"] },
+  lmrow: { name: "Landmine row", pose: "row", imp: "landmine", g: "strength", inc: 2.5, cues: ["Hinge to about 45°, back flat", "Pull the sleeve to your belly, squeeze the back"] },
+  reardelt: { name: "Chest-supported rear delt fly", pose: "row", imp: "db", g: "strength", inc: 1, cues: ["Chest on the incline bench, face down", "Raise the arms out wide, thumbs slightly down"] },
+  hipthrust: { name: "Barbell hip thrust", pose: "hipthrust", g: "strength", inc: 5, cues: ["Upper back on the bench, bar padded", "Chin tucked, ribs down, squeeze hard at the top"] },
+  abroller: { name: "Ab roller (knees)", pose: "abroller", g: "strength", cues: ["Only roll as far as you can control", "Short range is fine, ribs down"] },
+  zone2: { name: "Zone 2 bike", pose: "bike", g: "cardio", cues: ["Conversational pace: you can talk, not sing", "Roughly 110–125 bpm for you"] },
+  rower: { name: "Air rower", pose: "rower", g: "cardio", cues: ["Legs, then lean, then arms", "Reverse on the way back"] },
+  walk: { name: "Brisk walk", pose: "walk", g: "cardio", cues: ["Breathing a bit harder than normal", "Outside if you can, daylight helps sleep"] },
+
+  hipflex: { name: "Hip flexor stretch", pose: "hipflex", g: "stretch", cues: ["Tuck the tailbone, squeeze the back glute", "Shift forward gently, reach the arm up"] },
+  hamstring: { name: "Seated hamstring stretch", pose: "hamstring", g: "stretch", cues: ["Sit tall, then hinge from the hips", "Reach for the shins, not the toes"] },
+  catcow: { name: "Cat-cow", pose: "catcow", g: "stretch", cues: ["Round the back up, then let it sag", "Move with the breath"] },
+  childpose: { name: "Child's pose", pose: "childpose", g: "stretch", cues: ["Sit back to the heels", "Arms long, breathe into the lower back"] },
+  roller: { name: "Foam roller extension", pose: "roller", g: "stretch", cues: ["Roller across the upper back", "Hands behind head, extend over, shift an inch, repeat"] },
+  chest: { name: "Chest opener", pose: "chest", g: "stretch", cues: ["Hands clasped behind you", "Lift the chest, squeeze the shoulder blades"] },
+  squathold: { name: "Deep squat hold", pose: "squathold", g: "stretch", cues: ["Sit down between the heels", "Hold something if you need to, breathe"] },
+  hipswing: { name: "Hip swings", pose: "hipswing", g: "stretch", cues: ["Hold the rack, swing one leg forward and back", "Loose and easy, 10–15 each side"] },
+  figure4: { name: "Figure-4 glute stretch", pose: "figure4", g: "stretch", cues: ["Ankle over the opposite knee", "Pull that thigh toward you, 60 s each side"] },
+  calfstretch: { name: "Calf stretch", pose: "calfstretch", g: "stretch", cues: ["Hands on the wall, back heel down", "Lean in until you feel the calf, 45 s each side"] },
+  quadstretch: { name: "Standing quad stretch", pose: "quadstretch", g: "stretch", cues: ["Hold something for balance", "Heel to the backside, knees together, tuck the tailbone"] },
+  neckside: { name: "Neck side stretch", pose: "neckside", g: "stretch", cues: ["Ear toward the shoulder, other shoulder down", "Rest a hand on your head, no pulling"] },
+  crossbody: { name: "Cross-body shoulder stretch", pose: "crossbody", g: "stretch", cues: ["Arm straight across the chest", "Hook it with the other arm and draw it in"] },
+  groin: { name: "Wide stance groin stretch", pose: "groin", g: "stretch", cues: ["Feet wide, toes slightly out", "Sink the hips down, chest tall"] },
+  chintuck: { name: "Chin tucks", pose: "chintuck", g: "desk", cues: ["Slide the head straight back, double chin", "Hold 3 seconds, 10 reps"] },
+  seatedext: { name: "Chair back extension", pose: "seatedext", g: "desk", cues: ["Sit tall, hands behind head", "Lean back over the chair, open the chest"] },
+  pelvic: { name: "Core squeeze", pose: "pelvic", g: "desk", cues: ["Squeeze as if stopping the flow and holding in wind", "Hold 5–10 seconds, relax fully, 10 reps", "Breathe normally, don't clench the glutes"] },
+};
+// Movement block, in Ben's order (from his printed sheet)
+const WARMUP = ["hops", "waves", "armswing", "twist", "deadarms", "golf", "march"];
+const EVENING = [["hipflex", "60 s each side"], ["hamstring", "60 s each side"], ["figure4", "60 s each side"], ["chest", "45 s"], ["twist", "45 s each way"], ["calfstretch", "45 s each side"], ["childpose", "60 s"], ["pelvic", "10 slow squeezes"]];
+const DESKR = [["chintuck", "10 reps"], ["hipflex", "30 s each side"], ["seatedext", "5 slow reps"], ["calf", "15 reps, no weight"], ["march", "30 s"], ["pelvic", "5 squeezes"]];
+const DOSE = {
+  hipflex: "60 s each side", hamstring: "60 s each side", figure4: "60 s each side", catcow: "60 s, slow",
+  childpose: "60 s", roller: "60 s", chest: "45 s", squathold: "60 s", calfstretch: "45 s each side",
+  hipswing: "10 swings each side", twist: "45 s each way", chintuck: "10 reps", neckside: "30 s each side",
+  crossbody: "30 s each side", quadstretch: "45 s each side", groin: "60 s", pelvic: "10 slow squeezes",
+};
+// What to do about the bit that hurts. Ordered best-first.
+const TIGHT = [
+  { area: "Lower back", ids: ["catcow", "childpose", "figure4", "hipflex"], note: "Nine times out of ten a stiff lower back is tight hips, not a bad back. Loosen the hips first and move gently — resting it flat usually makes it worse." },
+  { area: "Hips", ids: ["hipflex", "figure4", "squathold", "groin"], note: "This is the price of long days in the seat and the driver's seat. Hit it after driving, not just at night." },
+  { area: "Hamstrings", ids: ["hamstring", "squathold", "catcow"], note: "Hinge from the hips, not the lower back. If your back rounds, you're stretching the wrong thing." },
+  { area: "Glutes", ids: ["figure4", "squathold", "hipflex"], note: "Deep glute tightness after squats and RDLs is normal. Figure-4 is the one that gets it." },
+  { area: "Quads", ids: ["quadstretch", "hipflex", "squathold"], note: "Tuck the tailbone in the quad stretch or you'll just arch your back and feel nothing." },
+  { area: "Groin", ids: ["groin", "squathold", "figure4"], note: "Go slow here. Groin tissue complains loudly if you force it." },
+  { area: "Calves", ids: ["calfstretch", "squathold", "hipswing"], note: "Tight calves quietly limit how deep you squat. Worth two minutes." },
+  { area: "Chest", ids: ["chest", "crossbody", "roller"], note: "Rounded-forward shoulders come from the desk, not from pressing. Open the chest, don't stretch the shoulder joint hard." },
+  { area: "Shoulders", ids: ["crossbody", "chest", "roller"], note: "If a shoulder is sharp rather than tight, leave it and see a physio." },
+  { area: "Upper back", ids: ["roller", "catcow", "twist", "childpose"], note: "The foam roller extension is the best one you own for this. Shift an inch at a time." },
+  { area: "Neck", ids: ["chintuck", "neckside", "chest"], note: "Neck tightness is usually the head drifting forward over a screen all day. Chin tucks fix the cause." },
+];
+const SPINE = ["squat", "rdl", "lunge", "swing", "goblet", "row", "carry"];
+
+/* ---------- the weekly program, built from your plan ---------- */
+const S = (id, sets, lo, hi, kg, extra = {}) => ({ id, sets, lo, hi, kg, rest: 60, ...extra });
+const S3 = (id, lo, hi, kg, rest = 90, extra = {}) => ({ id, sets: 3, lo, hi, kg, rest, ...extra });
+const RAMP = "Ramp up with 1–2 light sets first. Stop 1–2 reps short of failure.";
+
+// Sets, reps and starting weights. Weights come from Ben's Drive workout log (to 22 Aug 2026).
+const META = {
+  squat:     { sets: 3, lo: 8, hi: 8, kg: 70, rest: 90, tip: RAMP, big: true },
+  rdl:       { sets: 3, lo: 8, hi: 8, kg: 50, rest: 90, tip: RAMP, big: true },
+  bench:     { sets: 3, lo: 8, hi: 8, kg: 55, rest: 90, tip: RAMP, big: true },
+  ohp:       { sets: 3, lo: 8, hi: 8, kg: 30, rest: 90, tip: RAMP, big: true },
+  row:       { sets: 3, lo: 8, hi: 8, kg: 45, rest: 90, tip: RAMP, big: true },
+  dbbench:   { sets: 3, lo: 10, hi: 10, kg: 20 },
+  dbrdl:     { sets: 3, lo: 10, hi: 10, kg: 15 },
+  dbpress:   { sets: 3, lo: 10, hi: 10, kg: 15 },
+  dbrow:     { sets: 3, lo: 10, hi: 10, kg: 22.5, note: "each side" },
+  lmrow:     { sets: 3, lo: 10, hi: 10, kg: 20 },
+  goblet:    { sets: 3, lo: 10, hi: 10, kg: 20 },
+  legext:    { sets: 3, lo: 12, hi: 12, kg: 20 },
+  legcurl:   { sets: 3, lo: 12, hi: 12, kg: 15 },
+  lunge:     { sets: 2, lo: 10, hi: 10, kg: 9, note: "each leg" },
+  stepup:    { sets: 3, lo: 10, hi: 10, kg: null, note: "each leg" },
+  calf:      { sets: 2, lo: 15, hi: 15, kg: null },
+  lateral:   { sets: 3, lo: 12, hi: 12, kg: 7 },
+  reardelt:  { sets: 3, lo: 15, hi: 15, kg: 5 },
+  curl:      { sets: 3, lo: 10, hi: 10, kg: 10 },
+  skull:     { sets: 3, lo: 10, hi: 10, kg: 10 },
+  ohtri:     { sets: 3, lo: 12, hi: 12, kg: null },
+  incline:   { sets: 3, lo: 10, hi: 10, kg: null },
+  landmine:  { sets: 3, lo: 10, hi: 10, kg: null },
+  swing:     { sets: 3, lo: 15, hi: 15, kg: 12 },
+  hipthrust: { sets: 3, lo: 10, hi: 10, kg: null, tip: "Start light and stop if the back talks back." },
+  carry:     { sets: 3, lo: 40, hi: 40, kg: 22.5, note: "metres, kg per hand" },
+  pushup:    { sets: 3, lo: 8, hi: 15, kg: 0, bw: true },
+  pulldown:  { sets: 3, lo: 12, hi: 12, kg: 0, bw: true },
+  facepull:  { sets: 3, lo: 15, hi: 20, kg: 0, bw: true },
+  abroller:  { sets: 2, lo: 8, hi: 8, kg: 0, bw: true },
+  bridge:    { sets: 3, lo: 15, hi: 15, kg: 0, bw: true },
+  deadbug:   { sets: 3, lo: 8, hi: 8, kg: 0, bw: true, note: "each side" },
+};
+const mk = (id) => {
+  const m = META[id] || { sets: 3, lo: 10, hi: 10, kg: null };
+  return S(id, m.sets, m.lo, m.hi, m.kg, { rest: m.rest || 60, ...(m.bw ? { bw: true } : {}), ...(m.note ? { note: m.note } : {}), ...(m.tip ? { tip: m.tip } : {}) });
+};
+
+// Each template is in priority order: the first exercises survive a short session.
+const TEMPLATES = {
+  lowerA:  { title: "Lower A", sub: "Squat focus", back: true, ids: ["squat", "dbrdl", "legext", "lunge", "calf", "deadbug"] },
+  lowerB:  { title: "Lower B", sub: "Hinge focus", back: true, ids: ["rdl", "goblet", "legcurl", "hipthrust", "abroller", "calf"] },
+  push:    { title: "Upper Push", sub: "Chest, shoulders, triceps", ids: ["bench", "dbpress", "pushup", "lateral", "skull", "ohtri"] },
+  pull:    { title: "Upper Pull", sub: "Back and biceps", ids: ["row", "dbrow", "pulldown", "reardelt", "curl", "facepull"] },
+  fullA:   { title: "Full Body A", sub: "Everything, one session", back: true, ids: ["ohp", "dbbench", "lmrow", "goblet", "swing", "carry"] },
+  fullB:   { title: "Full Body B", sub: "Everything, one session", back: true, ids: ["squat", "bench", "row", "dbpress", "swing", "plank"] },
+  fullC:   { title: "Full Body C", sub: "Everything, one session", back: true, ids: ["rdl", "incline", "dbrow", "lunge", "curl", "deadbug"] },
+};
+// Which templates to use, by how many lifting days you picked.
+const SPLITS = {
+  1: ["fullB"],
+  2: ["fullA", "fullC"],
+  3: ["lowerA", "push", "pull"],
+  4: ["lowerA", "push", "lowerB", "pull"],
+  5: ["lowerA", "push", "lowerB", "pull", "fullA"],
+  6: ["lowerA", "push", "lowerB", "pull", "fullA", "fullC"],
+};
+const STRETCH_BLOCK = [
+  { id: "hipflex", sec: 60, note: "each side" },
+  { id: "hamstring", sec: 60, note: "each side" },
+  { id: "figure4", sec: 60, note: "each side" },
+  { id: "catcow", sec: 60 },
+  { id: "childpose", sec: 60 },
+];
+const MOBILITY_DAY = [
+  { id: "catcow", sec: 60 },
+  { id: "hipflex", sec: 60, note: "each side" },
+  { id: "roller", sec: 60 },
+  { id: "squathold", sec: 60 },
+  { id: "hamstring", sec: 60, note: "each side" },
+  { id: "childpose", sec: 60 },
+];
+
+const DEFAULT_PLAN = {
+  liftDays: [1, 2, 4, 5, 6],
+  mins: 45,
+  cardio: "own",      // "off" | "combined" | "own"
+  stretch: "own",     // "off" | "combined" | "own"
+  walk: true,         // a walk on the remaining rest days
+  trackWeight: true,  // show the body weight chart and weigh-ins
+};
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const weekOrder = (d) => (d + 6) % 7; // Monday first
+
+function buildDays(planIn) {
+  const plan = { ...DEFAULT_PLAN, ...(planIn || {}) };
+  const lift = [...new Set(plan.liftDays)].filter((d) => d >= 0 && d <= 6).sort((a, b) => weekOrder(a) - weekOrder(b));
+  const split = SPLITS[clamp(lift.length, 1, 6)] || SPLITS[4];
+
+  // Time budget: 5 min warm-up + ~4 min movement block, then about 7 min per strength exercise.
+  const cardioMins = plan.cardio === "combined" ? clamp(Math.round(plan.mins * 0.25), 8, 15) : 0;
+  const stretchMins = plan.stretch === "combined" ? 6 : 0;
+  const budget = plan.mins - 9 - cardioMins - stretchMins;
+  const nBase = clamp(Math.round(budget / 7), 2, 6);
+
+  const days = {};
+  lift.forEach((dow, i) => {
+    const t = TEMPLATES[split[i % split.length]];
+    const isFull = split[i % split.length].startsWith("full");
+    const n = clamp(isFull && plan.mins >= 45 ? nBase + 1 : nBase, 2, 6);
+    const items = t.ids.slice(0, n).map(mk);
+    // Pair the accessories so they run as supersets and the session fits the time.
+    for (let k = 1; k + 1 < items.length; k += 2) {
+      items[k].pair = items[k + 1].id;
+      items[k + 1].pair = items[k].id;
+    }
+    if (cardioMins) items.push({ id: "zone2", min: cardioMins, note: "finisher, easy pace" });
+    if (stretchMins) STRETCH_BLOCK.slice(0, 3).forEach((x) => items.push({ ...x }));
+    days[dow] = { title: t.title, sub: t.sub, back: t.back, items };
+  });
+
+  const rest = [0, 1, 2, 3, 4, 5, 6].filter((d) => !lift.includes(d)).sort((a, b) => weekOrder(a) - weekOrder(b));
+  const wantCardioDay = plan.cardio === "own";
+  const wantStretchDay = plan.stretch === "own";
+  rest.forEach((dow, i) => {
+    const first = i === 0;
+    const cardioHere = wantCardioDay && first;
+    const stretchHere = wantStretchDay && first;
+    if (cardioHere && stretchHere) {
+      days[dow] = { title: "Cardio + Mobility", sub: "Zone 2, then loosen up", items: [{ id: "zone2", min: clamp(plan.mins - 20, 15, 45) }, ...MOBILITY_DAY.map((x) => ({ ...x }))] };
+    } else if (cardioHere) {
+      days[dow] = { title: "Cardio", sub: "Zone 2, steady and easy", items: [{ id: "zone2", min: clamp(plan.mins - 10, 15, 45) }, { id: "rower", min: 8, note: "steady" }] };
+    } else if (stretchHere) {
+      days[dow] = { title: "Mobility", sub: "Loosen everything off", items: MOBILITY_DAY.map((x) => ({ ...x })) };
+    } else if (plan.walk) {
+      days[dow] = { title: "Rest + Walk", sub: "Long walk, no lifting", items: [{ id: "walk", min: 45 }] };
+    } else {
+      days[dow] = { title: "Rest", sub: "Nothing scheduled. Recovery is part of the plan.", items: [] };
+    }
+  });
+  return days;
+}
+
+// DAYS is rebuilt whenever the plan changes (App does this on every render).
+let DAYS = buildDays(DEFAULT_PLAN);
+const applyPlan = (plan) => { DAYS = buildDays(plan); };
+
+const TRAVEL = { title: "Hotel session", sub: "20 minutes, no gear", items: [S3("pushup", 8, 15, 0, 45, { bw: true }), S3("lunge", 10, 12, 0, 45, { bw: true, note: "per leg" }), S3("bridge", 15, 20, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "per side" }), { id: "plank", sec: 45 }, { id: "walk", min: 20 }] };
+const BACKCARE = { title: "Back care", sub: "Gentle version for a sore back", items: [{ id: "bike", min: 10 }, S3("bridge", 12, 12, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "per side" }), { id: "catcow", sec: 60 }, { id: "hipflex", sec: 60 }, { id: "walk", min: 15 }] };
+const needsWarmup = (items) => (items || []).some((x) => x.sets || (x.min && x.id !== "walk"));
+const sessionFor = (key) => (key === "travel" ? TRAVEL : key === "backcare" ? BACKCARE : DAYS[key]);
+
+/* ---------- why + outcomes ---------- */
+const DEFAULT_WHYS = [
+  "Keep up with the boys. Niko's six, and there's a lot of footy, bikes and beaches still to come.",
+  "Make sure the kilos coming off are fat, not muscle. The injections handle appetite; lifting and protein decide what's lost.",
+  "Energy for two businesses and 4am starts, without running on fumes.",
+];
+const OUTCOMES = [
+  { t: "Muscle kept, fat lost", d: "Resistance training plus protein at 130 g+ is the main thing that protects muscle while appetite is suppressed. More muscle means a better metabolism and better-looking results at the same scale weight." },
+  { t: "Heart and blood pressure", d: "Regular cardio and weight loss both lower blood pressure and resting heart rate. The Wednesday bike and daily steps are doing real work here." },
+  { t: "Circulation", d: "Better blood flow, everywhere. Regular cardio (around 40 minutes, four times a week), losing weight and the daily core squeeze are some of the best-evidenced ways to improve circulation and vitality. Fat loss can help testosterone too." },
+  { t: "Blood sugar", d: "Muscle is where most blood sugar goes after a meal. Every session and every walk after dinner improves how you handle carbs." },
+  { t: "A back that copes with sitting", d: "Strong glutes and trunk, plus hourly movement breaks, are the most reliable fix for the stiffness that long desk and driving days bring." },
+  { t: "Sleep and mood", d: "Training and daylight deepen sleep and lift mood. You already have the sleep setup dialled; exercise stacks on top." },
+  { t: "Strong at 60", d: "Leg strength, grip and fitness are among the best predictors of staying independent and healthy later. You're building the base now." },
+];
+
+/* ---------- storage ---------- */
+const KEY = "sharpen-v1";
+export const APP_VERSION = "1.0.0";
+// The log lives in this browser only. Nothing is sent anywhere.
+const store = {
+  get() { try { return window.localStorage.getItem(KEY); } catch (e) { return null; } },
+  set(v) { try { window.localStorage.setItem(KEY, v); return true; } catch (e) { return false; } },
+};
+const L = (id, arr, extra = {}) => ({ id, sets: arr.map(([w, r]) => ({ w, r, done: true })), ...extra });
+const SEED_SESSIONS = [
+  { date: "2026-08-10", title: "Lower A", mins: null, items: [L("squat", [[60, 10], [60, 10], [60, 8]]), L("dbrdl", [[9, 10], [12.5, 10], [12.5, 8]]), L("legext", [[15, 12], [15, 12], [15, 12]]), L("calf", [["", 12], ["", 12], ["", 12]])], note: "Lunges skipped, out of time" },
+  { date: "2026-08-11", title: "Evening bike", mins: 32, items: [{ id: "zone2", done: true, min: 32 }], note: "Avg HR 124" },
+  { date: "2026-08-12", title: "Upper Push", mins: 36, items: [L("bench", [[40, 12], [40, 10], [50, 8]]), L("dbpress", [[7, 10], [9, 10], [10, 10]]), L("pushup", [[0, 10]])], note: "40 too light" },
+  { date: "2026-08-13", title: "Lower B", mins: 52, items: [L("rdl", [[40, 10], [40, 10], [40, 8]]), L("goblet", [[12, 10], [12, 10], [15, 10]]), L("legcurl", [[10, 12], [15, 12], [15, 12]])], note: "Hip thrust and ab roller skipped, had to start work" },
+  { date: "2026-08-14", title: "Upper Pull", mins: 38, items: [L("row", [[40, 10], [40, 10], [40, 10]]), L("dbrow", [[20, 10], [20, 10], [22.5, 10]]), L("reardelt", [[5, 15], [5, 15], [5, 12]]), L("curl", [[10, 10], [10, 10], [10, 9]])] },
+  { date: "2026-08-15", title: "Full Body", mins: 63, items: [L("ohp", [[20, 15], [30, 12], [30, 10]]), L("dbbench", [[15, 15], [15, 12], [15, 10]]), L("lmrow", [[20, 15], [20, 15], [20, 15]]), L("goblet", [[20, 10], [20, 10], [20, 10]]), L("swing", [[12, 10], [12, 10], [12, 10]]), L("carry", [[22.5, 40], [22.5, 40], [22.5, 40]])] },
+  { date: "2026-08-18", title: "Lower A", mins: null, items: [L("squat", [[60, 10], [70, 8], [70, 8]]), L("dbrdl", [[12.5, 10], [15, 10], [15, 10]]), L("legext", [[15, 12], [20, 12], [20, 12]]), L("lunge", [[9, 10], [9, 10]]), L("calf", [["", 15], ["", 15]])], note: "First full Lower A. Hold squat at 70" },
+  { date: "2026-08-19", title: "Upper Push", mins: null, items: [L("bench", [[50, 8], [55, 10], [60, 8]]), L("dbpress", [[12.5, 10], [12.5, 10], [12.5, 10]]), L("lateral", [[7, 10], [7, 10], [7, 10]]), L("skull", [[5, 10], [10, 10], [10, 10]])] },
+  { date: "2026-08-20", title: "Cardio", mins: 15, items: [{ id: "zone2", done: true, min: 15 }] },
+  { date: "2026-08-22", title: "Lower B", mins: null, items: [L("rdl", [[45, 8], [45, 8], [45, 8]]), L("goblet", [[20, 10], [20, 10], [20, 10]]), L("legcurl", [[15, 12], [15, 12], [15, 12]])], note: "Hip thrust and ab roller stopped, back tight. Right call" },
+];
+const SEED_WEIGH = [{ date: "2026-07-31", kg: 111 }, { date: "2026-08-28", kg: 107.7 }, { date: "2026-09-10", kg: 108 }];
+const DEFAULT = {
+  ver: 2,
+  profile: { name: "Ben", startKg: 111, heightCm: 175, goalKg: 95, jabDay: 6, stepsTarget: 8000, proteinTarget: 130, waterTarget: 2500, movesTarget: 6, shakeG: 25, barG: 20 },
+  weighins: SEED_WEIGH,
+  plan: DEFAULT_PLAN,
+  lastBackup: null,
+  habits: {}, sessions: SEED_SESSIONS, active: null, whys: DEFAULT_WHYS, calendar: null, chat: [], apiKey: "", model: "claude-sonnet-5",
+};
+const blankHabits = { protein: 0, water: 0, steps: 0, moves: 0, pelvic: false, stretch: false, bed: false, jab: false };
+
+/* ---------- training logic ---------- */
+function lastFor(sessions, id) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const it = sessions[i].items.find((x) => x.id === id && x.sets && x.sets.some((q) => q.done));
+    if (it) return { date: sessions[i].date, sets: it.sets.filter((q) => q.done) };
+  }
+  return null;
+}
+// Time off changes what the app puts on the bar.
+//  up to 10 days   - normal progression, nudge up when every rep was hit
+//  11 to 20 days   - hold exactly where you left off
+//  3 to 6 weeks    - come back 10% lighter
+//  6 weeks or more - come back 20% lighter
+const GAP_HOLD = 10, GAP_DROP = 21, GAP_BIG = 42;
+function daysBetween(a, b) { return Math.round((keyDate(b) - keyDate(a)) / 86400000); }
+function layoff(days) {
+  if (days <= GAP_HOLD) return null;
+  if (days < GAP_DROP) return { pct: 1, kind: "hold" };
+  if (days < GAP_BIG) return { pct: 0.9, kind: "drop" };
+  return { pct: 0.8, kind: "reset" };
+}
+const spanWords = (d) => {
+  if (d < 14) return `${d} days`;
+  const w = Math.round(d / 7);
+  return w < 9 ? `${w} weeks` : `${Math.round(d / 30)} months`;
+};
+function suggest(it, last, today) {
+  if (!last) return { w: it.kg, note: it.kg == null && !it.bw ? "First time logging this one. Pick a weight you could lift for 2–3 more reps." : null };
+  const gap = today ? daysBetween(last.date, today) : 0;
+  const off = layoff(gap);
+  const w = Math.max(...last.sets.map((q) => Number(q.w) || 0));
+  const inc = (EX[it.id] && EX[it.id].inc) || 2.5;
+  const allTop = last.sets.length >= it.sets && last.sets.every((q) => q.r >= it.hi);
+  const when = `Last done ${fmtShort(last.date)}, ${spanWords(gap)} ago.`;
+
+  if (off) {
+    if (it.bw) {
+      return { w: 0, note: off.kind === "hold"
+        ? `${when} Same reps as last time. No hero sets.`
+        : `${when} Cut the reps by about a third today and build back up.` };
+    }
+    const back = Math.max(0, r25(w * off.pct));
+    if (off.kind === "hold") return { w, note: `${when} Same weight as last time, ${w} kg. Earn the next jump.` };
+    if (off.kind === "drop") return { w: back, note: `${when} Starting 10% lighter at ${back} kg. You'll be back at ${w} kg inside a fortnight — that's how it's meant to go.` };
+    return { w: back, note: `${when} Back to ${back} kg to rebuild the movement first. Strength comes back much faster than it was built.` };
+  }
+
+  if (it.bw) return { w: 0, note: allTop ? `Hit ${it.hi} on every set last time. Slow the lowering right down to make it harder.` : null };
+  if (allTop) return { w: w + inc, note: `Every rep hit last time at ${w} kg. Up to ${w + inc} kg today.` };
+  if (last.sets.some((q) => q.r < it.lo)) return { w, note: `Stay at ${w} kg and own it. Holding strength in a deficit is a win.` };
+  return { w, note: `Same ${w} kg, chase one more rep somewhere.` };
+}
+function prefill(it, sessions, back, today) {
+  if (it.min || it.sec) return { ...it, done: false };
+  const last = lastFor(sessions, it.id);
+  let { w, note: hint } = suggest(it, last, today);
+  if (!it.bw && !w && it.kg == null) { w = null; hint = "No weight recorded for this one yet. Pick one and log it."; }
+  if (it.tip) hint = hint ? `${it.tip} ${hint}` : it.tip;
+  if (back === "tight" && SPINE.includes(it.id) && w) { w = r25(w * 0.9); hint = "Back's tight: 10% lighter today, and stop two reps shy of failure."; }
+  return { ...it, n: it.sets, hint, last, sets: Array.from({ length: it.sets }, () => ({ w: w == null ? "" : w, r: it.hi, done: false })) };
+}
+function bestFor(sessions, id) {
+  let b = 0;
+  sessions.forEach((s) => s.items.forEach((it) => { if (it.id === id && it.sets) it.sets.forEach((q) => { if (q.done && Number(q.w) > b) b = Number(q.w); }); }));
+  return b;
+}
+
+/* ---------- coaching ---------- */
+const GAINS = [
+  "Muscle kept while the fat comes off",
+  "Lower blood pressure and a stronger heart",
+  "Better circulation and more energy",
+  "Sharper blood sugar control",
+  "A back that copes with long days in the seat",
+  "Deeper sleep and a better mood",
+  "Strong enough at 60 to keep up with anyone",
+];
+function coachLine({ hour, dow, trained, done, total, weekCount, jab, travel, missedYesterday, name, goal, toGo, weighedToday }) {
+  const gain = GAINS[(dow + hour) % GAINS.length].toLowerCase();
+  const plan = DAYS[dow] || { title: "Today", items: [] };
+  const restDay = !plan.items.some((x) => x.sets);
+  const target = goal ? `${goal} kg` : "where you're going";
+  if (travel) return "Travel day, no excuses. Twenty-minute hotel session and the streak stays alive.";
+  if (jab) return "Jab day and the big session. Protein first, water in, then earn it. Saturday's the longest workout of the week.";
+  if (!trained && missedYesterday && hour < 12) return "Yesterday's gone. The rule is never miss two. Get today done.";
+  if (goal && dow === 5 && !weighedToday && hour < 9) return "Friday weigh-in. Straight after the toilet, before food. The weekly trend is the truth.";
+  if (hour < 6 && !trained && !restDay) return `4:15, ${name}. ${plan.title} is loaded. Every session is a step to ${target}.`;
+  if (done >= total - 1) return `Nearly a perfect day. Finish it off. This is how ${target} happens.`;
+  if (trained && done < total / 2) return "Session's done. Don't leave the rest on the table: protein, water, and get up from that desk.";
+  if (weekCount >= 4) return `${weekCount} sessions this week. That's the guy who gets to ${target}.`;
+  if (hour >= 17) return "Stretch at 7:45, bed by 8. Tomorrow's 4:15 starts right now.";
+  const pool = [
+    goal ? `${toGo} kg to go. Chip away. Today's payoff: ${gain}.` : `Today's payoff: ${gain}. Chip away.`,
+    "Training is the signal, protein is the material. Miss the 130 g and the muscle pays for it.",
+    "Been sitting an hour? Your back and your heart are paying for it. Two-minute desk reset, now.",
+    `Consistency wins. Every tick today buys you ${gain}.`,
+  ];
+  return pool[(dow + hour) % pool.length];
+}
+const DONE_LINES = [
+  "Banked. One more session in the bank.",
+  "Done while the house sleeps. That's what separates you.",
+  "Strength held in a deficit. The kilos coming off are fat, not muscle.",
+  "Logged. Now hit your protein and make this session count.",
+];
+
+/* ---------- small UI pieces ---------- */
+const css = `
+.sh{font-family:"Avenir Next",Avenir,"Helvetica Neue",system-ui,sans-serif;background:${C.night};color:${C.paper};min-height:100vh;padding-bottom:92px;-webkit-font-smoothing:antialiased}
+.sh *{box-sizing:border-box}
+.sh button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sh button:focus-visible,.sh input:focus-visible,.sh textarea:focus-visible{outline:2px solid ${C.sun};outline-offset:2px}
+.num{font-family:"Avenir Next Condensed","Arial Narrow","Avenir Next",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+.h1{font-size:30px;font-weight:700;line-height:1.1;margin:0}
+.h2{font-size:20px;font-weight:700;margin:0 0 4px}
+.sub{color:${C.mist};font-size:14px;line-height:1.45}
+.pill{border-radius:999px;padding:12px 20px;font-weight:600}
+.sh .go{background:${C.sun};color:${C.night}}
+.sh .ghost{background:${C.panel};color:${C.paper}}
+.inp{background:${C.deep};border:1px solid ${C.line};color:${C.paper};border-radius:10px;padding:10px 12px;font:inherit;width:100%}
+.sun-move{transition:transform 900ms cubic-bezier(.2,.7,.2,1)}
+@media (prefers-reduced-motion:reduce){.sun-move{transition:none}}
+`;
+
+function Stepper({ value, onChange, step = 1, min = 0, unit, width = 64, dec = false }) {
+  const v = value === "" || value == null ? "" : value;
+  const bump = (d) => { const n = Math.max(min, Math.round(((Number(v) || 0) + d) * 100) / 100); onChange(n); };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <button aria-label="decrease" onClick={() => bump(-step)} style={{ width: 38, height: 44, borderRadius: 10, background: C.deep, display: "grid", placeItems: "center" }}><Minus size={16} /></button>
+      <div style={{ position: "relative" }}>
+        <input className="num inp" inputMode={dec ? "decimal" : "numeric"} value={v} placeholder="—"
+          onChange={(e) => { const t = e.target.value.replace(",", "."); onChange(t === "" ? "" : isNaN(Number(t)) ? v : t); }}
+          onBlur={(e) => { if (e.target.value !== "") onChange(Number(e.target.value)); }}
+          style={{ width, textAlign: "center", fontSize: 20, padding: "8px 4px", paddingRight: unit ? 18 : 4 }} />
+        {unit && <span style={{ position: "absolute", right: 6, top: 14, fontSize: 11, color: C.mist }}>{unit}</span>}
+      </div>
+      <button aria-label="increase" onClick={() => bump(step)} style={{ width: 38, height: 44, borderRadius: 10, background: C.deep, display: "grid", placeItems: "center" }}><Plus size={16} /></button>
+    </div>
+  );
+}
+
+function Sheet({ onClose, children }) {
+  return (
+    <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(8,12,20,.72)", zIndex: 50, display: "flex", alignItems: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: C.deep, width: "100%", maxWidth: 560, margin: "0 auto", borderRadius: "22px 22px 0 0", padding: "18px 18px 32px", maxHeight: "88vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}><button aria-label="Close" onClick={onClose} style={{ padding: 6 }}><X size={22} /></button></div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ExerciseSheet({ id, onClose }) {
+  const ex = EX[id];
+  const days = Object.entries(DAYS).filter(([, d]) => d.items.some((i) => i.id === id)).map(([k]) => DOW[k]);
+  return (
+    <Sheet onClose={onClose}>
+      <div style={{ background: C.panel, borderRadius: 18, height: 240, padding: 10 }}><Figure pose={ex.pose} imp={ex.imp} label={ex.name} /></div>
+      <h2 className="h2" style={{ marginTop: 16, fontSize: 24 }}>{ex.name}</h2>
+      {days.length > 0 && <div className="sub">In your week on {days.join(", ")}</div>}
+      <ul style={{ paddingLeft: 18, lineHeight: 1.6, marginTop: 12 }}>{ex.cues.map((c) => <li key={c}>{c}</li>)}</ul>
+    </Sheet>
+  );
+}
+
+function RoutineSheet({ which, onClose }) {
+  const list = which === "evening" ? EVENING : DESKR;
+  return (
+    <Sheet onClose={onClose}>
+      <h2 className="h2" style={{ fontSize: 24 }}>{which === "evening" ? "Evening stretch" : "Desk reset"}</h2>
+      <p className="sub">{which === "evening" ? "About 10 minutes at 7:45. It's what makes the 4:15 start feel human." : "Two minutes, every hour you've been sitting or driving."}</p>
+      {list.map(([id, dose]) => (
+        <div key={id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderTop: `1px solid ${C.line}` }}>
+          <div style={{ width: 72, height: 72, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose={EX[id].pose} imp={EX[id].imp} /></div>
+          <div><div style={{ fontWeight: 600 }}>{EX[id].name}</div><div className="sub">{dose}</div></div>
+        </div>
+      ))}
+    </Sheet>
+  );
+}
+
+/* ---------- What's tight ---------- */
+function TightSheet({ onClose, openEx }) {
+  const [picked, setPicked] = useState([]);
+  const toggle = (a) => setPicked((o) => (o.includes(a) ? o.filter((x) => x !== a) : [...o, a]));
+  const chosen = TIGHT.filter((t) => picked.includes(t.area));
+  const routine = [];
+  chosen.forEach((t) => t.ids.forEach((id) => { if (!routine.includes(id)) routine.push(id); }));
+  const list = routine.slice(0, 6);
+  return (
+    <Sheet onClose={onClose}>
+      <h2 className="h2" style={{ fontSize: 24 }}>What's tight?</h2>
+      <p className="sub">Tap everything that's complaining. You'll get the stretches that actually reach it, in the order to do them.</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+        {TIGHT.map((t) => {
+          const on = picked.includes(t.area);
+          return (
+            <button key={t.area} onClick={() => toggle(t.area)} aria-pressed={on}
+              style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: on ? C.sun : C.panel, color: on ? C.night : C.paper }}>{t.area}</button>
+          );
+        })}
+      </div>
+
+      {list.length === 0 && <p className="sub" style={{ marginTop: 22 }}>Nothing picked yet. If everything's tight, start with hips and upper back — that's where a day of sitting lands.</p>}
+
+      {chosen.map((t) => (
+        <p key={t.area} style={{ marginTop: 18, paddingLeft: 14, borderLeft: `3px solid ${C.sun}`, fontSize: 15, lineHeight: 1.5 }}>
+          <span style={{ fontWeight: 700 }}>{t.area}.</span> {t.note}
+        </p>
+      ))}
+
+      {list.length > 0 && (
+        <>
+          <h3 className="h2" style={{ fontSize: 17, marginTop: 24 }}>Do these, in order</h3>
+          <p className="sub" style={{ marginBottom: 6 }}>About {Math.max(4, Math.round(list.length * 1.6))} minutes. Breathe out as you ease into each one, and never push into sharp pain.</p>
+          {list.map((id, i) => (
+            <div key={id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderTop: `1px solid ${C.line}` }}>
+              <div className="num" style={{ width: 16, color: C.mist }}>{i + 1}</div>
+              <button onClick={() => openEx(id)} style={{ width: 72, height: 72, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }} aria-label={`${EX[id].name} demo`}><Figure pose={EX[id].pose} imp={EX[id].imp} /></button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600 }}>{EX[id].name}</div>
+                <div className="sub">{DOSE[id] || "45 s"}</div>
+                <div className="sub">{EX[id].cues[0]}</div>
+              </div>
+            </div>
+          ))}
+          <p className="sub" style={{ marginTop: 14 }}>Tight eases off in a day or two. Pain that's sharp, lasts more than a week, or runs down a leg or arm is a physio call, not a stretching one.</p>
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+/* ---------- Today ---------- */
+function Dawn({ done, total, name, line, dateLabel }) {
+  const f = total ? done / total : 0;
+  const sunY = 182 - f * 140;
+  const sky = f < 0.5 ? C.night : "#1D2B45";
+  return (
+    <div style={{ position: "relative" }}>
+      <svg viewBox="0 0 360 190" style={{ width: "100%", display: "block" }} aria-hidden="true">
+        <defs>
+          <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={sky} />
+            <stop offset="1" stopColor={C.ember} stopOpacity={0.15 + f * 0.55} />
+          </linearGradient>
+          <clipPath id="above"><rect x="0" y="0" width="360" height="148" /></clipPath>
+        </defs>
+        <rect x="0" y="0" width="360" height="148" fill="url(#glow)" />
+        <g clipPath="url(#above)">
+          <g className="sun-move" style={{ transform: `translateY(${sunY}px)` }}>
+            <circle cx="270" cy="0" r="30" fill={C.sun} />
+            {f >= 1 && [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((a) => (
+              <line key={a} x1={270 + Math.cos((a * Math.PI) / 180) * 38} y1={Math.sin((a * Math.PI) / 180) * 38} x2={270 + Math.cos((a * Math.PI) / 180) * 48} y2={Math.sin((a * Math.PI) / 180) * 48} stroke={C.sun} strokeWidth="3" strokeLinecap="round" />
+            ))}
+          </g>
+        </g>
+        <path d="M0 148 L360 148 L360 190 L0 190 Z" fill={C.night} />
+        <path d="M0 148 Q 60 136 120 146 T 240 142 T 360 148" fill="none" stroke={C.line} strokeWidth="2" />
+        {Array.from({ length: total }).map((_, i) => (
+          <circle key={i} cx={24 + i * 16} cy="170" r="5" fill={i < done ? C.sun : "none"} stroke={i < done ? C.sun : C.line} strokeWidth="2" />
+        ))}
+        <text x={30 + total * 16} y="175" fill={C.mist} fontSize="13">{done} of {total} today</text>
+      </svg>
+      <div style={{ position: "absolute", left: 18, top: 22, right: 120 }}>
+        <div className="sub" style={{ color: C.mist }}>{dateLabel}</div>
+        <h1 className="h1" style={{ marginTop: 4 }}>{nzHour() < 12 ? "Morning" : nzHour() < 17 ? "Afternoon" : "Evening"}, {name}</h1>
+        <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.45, maxWidth: 300 }}>{line}</p>
+      </div>
+    </div>
+  );
+}
+
+function HabitRow({ icon, title, right, children, doneState }) {
+  return (
+    <div style={{ padding: "14px 0", borderTop: `1px solid ${C.line}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: doneState ? C.sun : C.panel, color: doneState ? C.night : C.paper, display: "grid", placeItems: "center", flexShrink: 0 }}>{icon}</div>
+        <div style={{ flex: 1, fontWeight: 600 }}>{title}</div>
+        {right}
+      </div>
+      {children && <div style={{ marginTop: 10, marginLeft: 46 }}>{children}</div>}
+    </div>
+  );
+}
+function Toggle({ on, onClick, label }) {
+  return (
+    <button onClick={onClick} aria-pressed={on} aria-label={label} style={{ width: 44, height: 44, borderRadius: 12, border: `2px solid ${on ? C.sun : C.line}`, background: on ? C.sun : "transparent", color: C.night, display: "grid", placeItems: "center" }}>
+      {on && <Check size={22} strokeWidth={3} />}
+    </button>
+  );
+}
+const Chip = ({ onClick, children }) => <button onClick={onClick} style={{ background: C.panel, borderRadius: 999, padding: "8px 12px", fontSize: 13, marginRight: 6, marginBottom: 6 }}>{children}</button>;
+
+function Today({ s, setS, today, goTrain, openEx, openRoutine, openTight, habitsDone, habitsTotal, coach }) {
+  const [editP, setEditP] = useState(false);
+  const h = { ...blankHabits, ...(s.habits[today] || {}) };
+  const P = s.profile;
+  const setH = (patch) => setS((o) => ({ ...o, habits: { ...o.habits, [today]: { ...blankHabits, ...(o.habits[today] || {}), ...patch } } }));
+  const dow = dowOf(today);
+  const cal = s.calendar && s.calendar.days ? s.calendar.days.find((d) => d.date === today) : null;
+  const travel = cal && cal.travel;
+  const trained = s.sessions.some((x) => x.date === today);
+  const plan = DAYS[dow];
+  const isJab = P.jabDay != null && P.jabDay === dow;
+  const [whyI, setWhyI] = useState(dowOf(today) % Math.max(1, s.whys.length));
+  const ws = weekStart(today);
+  return (
+    <div>
+      <Dawn done={habitsDone} total={habitsTotal} name={P.name} line={coach} dateLabel={fmtDate(today)} />
+      <div className="wrap">
+        {/* session */}
+        <div style={{ background: C.panel, borderRadius: 20, padding: 18, marginTop: 4 }}>
+          <div className="sub">{travel ? "Travel day" : `${DOWL[dow]}'s session`}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+            <div style={{ flex: 1 }}>
+              <div className="h2" style={{ fontSize: 22 }}>{travel ? TRAVEL.title : plan.title}</div>
+              <div className="sub">{travel ? TRAVEL.sub : plan.sub}</div>
+            </div>
+            {trained ? <div style={{ color: C.sage, fontWeight: 700, display: "flex", gap: 6, alignItems: "center" }}><Check size={18} />Done</div>
+              : (travel || (plan.items && plan.items.length))
+                ? <button className="pill go" onClick={() => goTrain(travel ? "travel" : dow)}>{s.active ? "Resume" : "Start"}</button>
+                : null}
+          </div>
+          <div style={{ display: "flex", gap: 6, marginTop: 14, overflowX: "auto" }}>
+            {(travel ? TRAVEL : plan).items.map((it, i) => (
+              <button key={i} onClick={() => openEx(it.id)} style={{ width: 58, height: 58, flexShrink: 0, background: C.deep, borderRadius: 12, padding: 4 }} aria-label={EX[it.id].name}>
+                <Figure pose={EX[it.id].pose} imp={EX[it.id].imp} bg={C.deep} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* week strip */}
+        <div style={{ display: "flex", justifyContent: "space-between", margin: "18px 2px 6px" }}>
+          {Array.from({ length: 7 }).map((_, i) => {
+            const k = addDays(ws, i), d = dowOf(k);
+            const did = s.sessions.some((x) => x.date === k);
+            const c = s.calendar && s.calendar.days ? s.calendar.days.find((x) => x.date === k) : null;
+            const isT = k === today;
+            return (
+              <div key={k} style={{ textAlign: "center", width: 42 }}>
+                <div style={{ fontSize: 12, color: isT ? C.sun : C.mist, fontWeight: isT ? 700 : 500 }}>{DOW[d]}</div>
+                <div style={{ width: 34, height: 34, margin: "4px auto 0", borderRadius: 999, display: "grid", placeItems: "center", background: did ? C.sun : "transparent", border: `2px solid ${did ? C.sun : isT ? C.sun : C.line}`, color: did ? C.night : C.paper, fontSize: 11 }}>
+                  {did ? <Check size={16} strokeWidth={3} /> : c && c.travel ? "✈" : ""}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* habits */}
+        <h2 className="h2" style={{ marginTop: 22 }}>Today's basics</h2>
+        <div className="sub" style={{ marginBottom: 6 }}>Each one ticked raises the sun.</div>
+        {isJab && (
+          <HabitRow icon={<Syringe size={18} />} title="Jab done" doneState={h.jab} right={<Toggle on={h.jab} onClick={() => setH({ jab: !h.jab })} label="Jab done" />} />
+        )}
+        <HabitRow icon={<Egg size={18} />} title="Protein" doneState={h.protein >= P.proteinTarget}
+          right={<span className="num" style={{ fontSize: 22 }}>{h.protein}<span style={{ fontSize: 13, color: C.mist }}> / {P.proteinTarget} g</span></span>}>
+          <Chip onClick={() => setH({ protein: h.protein + P.shakeG })}>Shake +{P.shakeG}</Chip>
+          <Chip onClick={() => setH({ protein: h.protein + P.barG })}>Protein bar +{P.barG}</Chip>
+          <Chip onClick={() => setH({ protein: h.protein + 10 })}>Meal +10</Chip>
+          <Chip onClick={() => setH({ protein: h.protein + 5 })}>+5</Chip>
+          <Chip onClick={() => setH({ protein: Math.max(0, h.protein - 5) })}>−5</Chip>
+          <button onClick={() => setEditP(!editP)} style={{ color: C.sun, fontSize: 13, padding: "8px 4px" }}>{editP ? "Done" : "Set grams"}</button>
+          {editP && (
+            <div style={{ marginTop: 8 }}>
+              {[["shakeG", "Shake"], ["barG", "Protein bar"]].map(([k, t]) => (
+                <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+                  <div style={{ width: 90, fontSize: 14 }}>{t}</div>
+                  <Stepper value={P[k]} step={1} unit="g" onChange={(v) => setS((o) => ({ ...o, profile: { ...o.profile, [k]: Number(v) || 0 } }))} />
+                </div>
+              ))}
+              <div className="sub" style={{ marginTop: 6 }}>Check the label on your usual brands.</div>
+            </div>
+          )}
+        </HabitRow>
+        <HabitRow icon={<Droplets size={18} />} title="Water" doneState={h.water >= P.waterTarget}
+          right={<span className="num" style={{ fontSize: 22 }}>{(h.water / 1000).toFixed(2)}<span style={{ fontSize: 13, color: C.mist }}> / {P.waterTarget / 1000} L</span></span>}>
+          <Chip onClick={() => setH({ water: h.water + 250 })}>Glass +250</Chip>
+          <Chip onClick={() => setH({ water: h.water + 500 })}>Bottle +500</Chip>
+          <Chip onClick={() => setH({ water: Math.max(0, h.water - 250) })}>−250</Chip>
+        </HabitRow>
+        <HabitRow icon={<Footprints size={18} />} title="Steps" doneState={h.steps >= P.stepsTarget}
+          right={<Stepper value={h.steps} step={500} onChange={(v) => setH({ steps: Number(v) || 0 })} width={80} />} />
+        <HabitRow icon={<Armchair size={18} />} title="Up from the desk" doneState={h.moves >= P.movesTarget}
+          right={<span className="num" style={{ fontSize: 22 }}>{h.moves}<span style={{ fontSize: 13, color: C.mist }}> / {P.movesTarget}</span></span>}>
+          <div className="sub" style={{ marginBottom: 8 }}>Every hour of sitting, stand up for two minutes. <button onClick={() => openRoutine("desk")} style={{ color: C.sun, padding: 0 }}>Show the desk reset</button></div>
+          <Chip onClick={() => setH({ moves: h.moves + 1 })}>I moved +1</Chip>
+          <Chip onClick={() => setH({ moves: Math.max(0, h.moves - 1) })}>−1</Chip>
+        </HabitRow>
+        <HabitRow icon={<Heart size={18} />} title="Core squeeze, 2 min" doneState={h.pelvic} right={<Toggle on={h.pelvic} onClick={() => setH({ pelvic: !h.pelvic })} label="Core squeeze done" />}>
+          <button onClick={() => openEx("pelvic")} style={{ color: C.sun, fontSize: 14, padding: 0 }}>How to do it</button>
+        </HabitRow>
+        <HabitRow icon={<Timer size={18} />} title="Evening stretch, 7:45" doneState={h.stretch} right={<Toggle on={h.stretch} onClick={() => setH({ stretch: !h.stretch })} label="Evening stretch done" />}>
+          <div style={{ display: "flex", gap: 16 }}>
+            <button onClick={() => openRoutine("evening")} style={{ color: C.sun, fontSize: 14, padding: 0 }}>Show the routine</button>
+            <button onClick={openTight} style={{ color: C.sun, fontSize: 14, padding: 0 }}>Something tight?</button>
+          </div>
+        </HabitRow>
+        <HabitRow icon={<Moon size={18} />} title="In bed by 8" doneState={h.bed} right={<Toggle on={h.bed} onClick={() => setH({ bed: !h.bed })} label="In bed by 8" />} />
+
+        {/* why */}
+        {s.whys.length > 0 && (
+          <button onClick={() => setWhyI((whyI + 1) % s.whys.length)} style={{ display: "block", width: "100%", textAlign: "left", marginTop: 26, padding: "20px 0 20px 18px", borderLeft: `4px solid ${C.sun}` }}>
+            <div className="sub">Why you're doing this</div>
+            <div style={{ fontSize: 19, lineHeight: 1.4, marginTop: 6, fontWeight: 500 }}>{s.whys[whyI % s.whys.length]}</div>
+            <div className="sub" style={{ marginTop: 8 }}>Tap for another</div>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Train ---------- */
+function useNow(active) {
+  const [n, setN] = useState(Date.now());
+  useEffect(() => { if (!active) return; const t = setInterval(() => setN(Date.now()), 500); return () => clearInterval(t); }, [active]);
+  return n;
+}
+
+function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
+  const A = s.active;
+  const [timer, setTimer] = useState(null); // {until, label}
+  const now = useNow(!!timer);
+  const left = timer ? Math.max(0, Math.ceil((timer.until - now) / 1000)) : 0;
+  useEffect(() => { if (timer && left === 0) { try { navigator.vibrate && navigator.vibrate(300); } catch (e) {} const t = setTimeout(() => setTimer(null), 1500); return () => clearTimeout(t); } }, [left, timer]);
+  const [note, setNote] = useState("");
+  const [summary, setSummary] = useState(null);
+  const setA = (fn) => setS((o) => ({ ...o, active: typeof fn === "function" ? fn(o.active) : fn }));
+
+  const start = (key, back, firstOnly) => {
+    const k = back === "sore" ? "backcare" : key;
+    const plan = sessionFor(k);
+    const src = firstOnly ? plan.items.slice(0, 1) : plan.items;
+    setS((o) => ({ ...o, active: { date: today, key: k, title: plan.title + (firstOnly ? " (first lift)" : ""), back: back || null, warmId: "bike", warmMin: 5, phase: needsWarmup(src) ? "warm" : "work", warm: {}, idx: 0, items: src.map((it) => prefill(it, o.sessions, back, today)), startedAt: Date.now() } }));
+  };
+  const [askBack, setAskBack] = useState(null);
+  const [sure, setSure] = useState(false);
+
+  if (summary) {
+    return (
+      <div className="wrap" style={{ paddingTop: 40 }}>
+        <Sunrise size={40} color={C.sun} />
+        <h1 className="h1" style={{ marginTop: 14 }}>{summary.line}</h1>
+        <div style={{ display: "flex", gap: 28, marginTop: 24 }}>
+          <div><div className="num" style={{ fontSize: 34 }}>{summary.sets}</div><div className="sub">sets</div></div>
+          <div><div className="num" style={{ fontSize: 34 }}>{summary.vol.toLocaleString()}</div><div className="sub">kg moved</div></div>
+          <div><div className="num" style={{ fontSize: 34 }}>{summary.mins}</div><div className="sub">minutes</div></div>
+        </div>
+        <div style={{ marginTop: 22, paddingLeft: 14, borderLeft: `3px solid ${C.sun}` }}>
+          <div className="sub">What that just bought you</div>
+          <div style={{ fontSize: 18, marginTop: 4 }}>{summary.gain}</div>
+        </div>
+        {summary.prs.length > 0 && (
+          <div style={{ marginTop: 24, padding: 16, borderRadius: 16, background: C.panel }}>
+            <div style={{ fontWeight: 700, color: C.sun }}>New bests</div>
+            {summary.prs.map((p) => <div key={p} style={{ marginTop: 4 }}>{p}</div>)}
+          </div>
+        )}
+        <button className="pill ghost" style={{ marginTop: 28 }} onClick={() => setSummary(null)}>Back to training</button>
+      </div>
+    );
+  }
+
+  if (!A) {
+    const key = pickDay;
+    const plan = sessionFor(key);
+    return (
+      <div className="wrap" style={{ paddingTop: 28 }}>
+        <h1 className="h1">Train</h1>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", margin: "16px 0" }}>
+          {[1, 2, 3, 4, 5, 6, 0, "travel"].map((d) => (
+            <button key={d} onClick={() => setPickDay(d)} style={{ padding: "8px 12px", borderRadius: 999, flexShrink: 0, background: pickDay === d ? C.sun : C.panel, color: pickDay === d ? C.night : C.paper, fontWeight: 600, fontSize: 14 }}>
+              {d === "travel" ? "Hotel" : DOW[d]}
+            </button>
+          ))}
+        </div>
+        <div className="h2" style={{ fontSize: 24 }}>{plan.title}</div>
+        <div className="sub">{plan.sub}</div>
+        {needsWarmup(plan.items) && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+          <div style={{ width: 54, height: 54, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose="hop" /></div>
+          <div><div style={{ fontWeight: 600 }}>5 min warm-up + movement block</div><div className="sub">Bike or rower, then {WARMUP.length} moves. Every workout.</div></div>
+        </div>}
+        <div style={{ marginTop: 16 }}>
+          {plan.items.map((it, i) => {
+            const last = lastFor(s.sessions, it.id);
+            let sug = it.min || it.sec ? null : suggest(it, last, today);
+            if (sug && !sug.w && it.kg == null) sug = { w: null };
+            return (
+              <button key={i} onClick={() => openEx(it.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+                <div style={{ width: 54, height: 54, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose={EX[it.id].pose} imp={EX[it.id].imp} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>{EX[it.id].name}</div>
+                  <div className="sub">{it.min ? `${it.min} min` : it.sec ? `${it.sec} s` : `${it.sets} × ${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`}${it.note ? ` ${it.note}` : ""}`}</div>
+                </div>
+                {sug && !it.bw && <div className="num" style={{ fontSize: 18, color: sug.w == null ? C.mist : C.paper }}>{sug.w == null ? "set kg" : `${sug.w} kg`}</div>}
+              </button>
+            );
+          })}
+        </div>
+        {plan.items.length > 0 && (
+          <button className="pill go" style={{ width: "100%", marginTop: 20, padding: 16, fontSize: 17 }}
+            onClick={() => (plan.back ? setAskBack(key) : start(key))}>Start {plan.title}</button>
+        )}
+        {plan.items.length === 0 && <p className="sub" style={{ marginTop: 18 }}>Nothing scheduled. Recovery is part of the plan — or change your days under Coach, Your plan.</p>}
+        {plan.items[0] && plan.items[0].sets && (
+          <button onClick={() => start(key, null, true)} style={{ display: "block", margin: "14px auto 0", color: C.mist, fontSize: 14 }}>Flat today? Do the first lift properly and call it.</button>
+        )}
+        {askBack !== null && (
+          <Sheet onClose={() => setAskBack(null)}>
+            <h2 className="h2" style={{ fontSize: 22 }}>Quick back check</h2>
+            <p className="sub">Squats and hinges load the lower back. How does it feel right now?</p>
+            {[["good", "Good to go", "Full session as planned."], ["tight", "A bit tight", "Spine-loaded lifts drop 10%, stop two reps shy."], ["sore", "Sore", "Swap to a gentle back-care session today."]].map(([v, t, d]) => (
+              <button key={v} onClick={() => { start(askBack, v); setAskBack(null); }} style={{ display: "block", width: "100%", textAlign: "left", padding: 16, marginTop: 10, borderRadius: 14, background: C.panel }}>
+                <div style={{ fontWeight: 700 }}>{t}</div><div className="sub">{d}</div>
+              </button>
+            ))}
+            <p className="sub" style={{ marginTop: 14 }}>If soreness sticks around more than a week or runs down a leg, get it looked at.</p>
+          </Sheet>
+        )}
+      </div>
+    );
+  }
+
+  /* active session */
+  const Timerbar = timer ? (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 76, zIndex: 30, display: "flex", justifyContent: "center", padding: "0 18px" }}>
+      <div style={{ background: left === 0 ? C.sun : C.panel, color: left === 0 ? C.night : C.paper, borderRadius: 999, padding: "10px 12px 10px 20px", display: "flex", alignItems: "center", gap: 14, maxWidth: 520, width: "100%", boxShadow: "0 8px 30px rgba(0,0,0,.4)" }}>
+        <Timer size={18} />
+        <div style={{ flex: 1 }}>{left === 0 ? "Go again" : timer.label}</div>
+        <div className="num" style={{ fontSize: 22 }}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}</div>
+        <button onClick={() => setTimer(null)} style={{ padding: "6px 12px", borderRadius: 999, background: "rgba(0,0,0,.2)" }}>Skip</button>
+      </div>
+    </div>
+  ) : null;
+
+  if (A.phase === "warm") {
+    const wid = A.warmId || "bike", wmin = 5;
+    const all = WARMUP.every((id) => A.warm[id]) && A.warm.warmup;
+    const tick = (k) => setA((a) => ({ ...a, warm: { ...a.warm, [k]: !a.warm[k] } }));
+    return (
+      <div className="wrap" style={{ paddingTop: 24 }}>
+        <div className="sub">{A.title}</div>
+        <h1 className="h1" style={{ marginTop: 4 }}>5 min warm-up</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", marginTop: 8 }}>
+          <button onClick={() => openEx(wid)} style={{ width: 64, height: 64, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }} aria-label={`${EX[wid].name} demo`}><Figure pose={EX[wid].pose} /></button>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[["bike", "Bike"], ["rower", "Rower"]].map(([k, t]) => (
+                <button key={k} onClick={() => setA((a) => ({ ...a, warmId: k }))} aria-pressed={wid === k} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: wid === k ? C.sun : C.panel, color: wid === k ? C.night : C.paper }}>{t}</button>
+              ))}
+            </div>
+            <div className="sub" style={{ marginTop: 4 }}>Easy pace, just raising the temperature</div>
+          </div>
+          {!A.warm.warmup && <button onClick={() => setTimer({ until: Date.now() + wmin * 60000, label: "Warm-up" })} style={{ padding: 8, color: C.sun }} aria-label="Start 5 minute timer"><Timer size={20} /></button>}
+          <Toggle on={!!A.warm.warmup} onClick={() => tick("warmup")} label="Warm-up done" />
+        </div>
+        <h2 className="h2" style={{ marginTop: 18 }}>Movement block</h2>
+        <p className="sub" style={{ margin: "0 0 6px" }}>About 30 seconds each, in order. Tick them off.</p>
+        {WARMUP.map((id, i) => (
+          <div key={id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderTop: `1px solid ${C.line}` }}>
+            <div className="num" style={{ width: 16, color: C.mist }}>{i + 1}</div>
+            <button onClick={() => openEx(id)} style={{ width: 60, height: 60, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }} aria-label={`${EX[id].name} demo`}><Figure pose={EX[id].pose} /></button>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600 }}>{EX[id].name}</div>
+              <div className="sub">{EX[id].cues[0]}</div>
+            </div>
+            <Toggle on={!!A.warm[id]} onClick={() => tick(id)} label={`${EX[id].name} done`} />
+          </div>
+        ))}
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          <button className="pill ghost" onClick={() => setA((a) => ({ ...a, phase: "work" }))}>Skip</button>
+          <button className="pill go" style={{ flex: 1, opacity: all ? 1 : 0.85 }} onClick={() => setA((a) => ({ ...a, phase: "work" }))}>{all ? "All done, into the session" : "Start the session"}</button>
+        </div>
+        {Timerbar}
+      </div>
+    );
+  }
+
+  if (A.phase === "done") {
+    const save = () => {
+      const items = A.items;
+      const sets = items.reduce((n, it) => n + (it.sets ? it.sets.filter((q) => q.done).length : it.done ? 1 : 0), 0);
+      const vol = Math.round(items.reduce((n, it) => n + (it.sets ? it.sets.filter((q) => q.done).reduce((m, q) => m + (Number(q.w) || 0) * (Number(q.r) || 0), 0) : 0), 0));
+      const prs = [];
+      items.forEach((it) => {
+        if (!it.sets || it.bw) return;
+        const prev = bestFor(s.sessions, it.id);
+        const now = Math.max(0, ...it.sets.filter((q) => q.done).map((q) => Number(q.w) || 0));
+        if (prev > 0 && now > prev) prs.push(`${EX[it.id].name}: ${now} kg (was ${prev})`);
+      });
+      const mins = Math.max(1, Math.round((Date.now() - A.startedAt) / 60000));
+      const rec = { date: A.date, key: A.key, title: A.title, back: A.back, mins, note, warmup: !!(A.warm && A.warm.warmup), movement: WARMUP.filter((id) => A.warm && A.warm[id]).length, items: items.map((it) => ({ id: it.id, lo: it.lo, hi: it.hi, sets: it.sets, done: it.done, min: it.min, sec: it.sec })) };
+      setS((o) => ({ ...o, active: null, sessions: [...o.sessions, rec] }));
+      setNote("");
+      setSummary({ sets, vol, prs, mins, line: DONE_LINES[s.sessions.length % DONE_LINES.length], gain: GAINS[s.sessions.length % GAINS.length] + "." });
+    };
+    return (
+      <div className="wrap" style={{ paddingTop: 30 }}>
+        <h1 className="h1">Finish {A.title}</h1>
+        <p className="sub">Anything worth remembering for next time? Energy, the back, a weight that felt easy.</p>
+        <textarea className="inp" rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" style={{ marginTop: 10 }} />
+        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+          <button className="pill ghost" onClick={() => setA((a) => ({ ...a, phase: "work" }))}>Back</button>
+          <button className="pill go" style={{ flex: 1 }} onClick={save}>Save session</button>
+        </div>
+      </div>
+    );
+  }
+
+  const it = A.items[A.idx];
+  const ex = EX[it.id];
+  const n = A.items.length;
+  const setItem = (patch) => setA((a) => ({ ...a, items: a.items.map((x, i) => (i === a.idx ? { ...x, ...patch } : x)) }));
+  const setSet = (j, patch) => setItem({ sets: it.sets.map((q, k) => (k === j ? { ...q, ...patch } : q)) });
+  const timed = it.min || it.sec;
+  return (
+    <div className="wrap" style={{ paddingTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1, display: "flex", gap: 4 }}>
+          {A.items.map((x, i) => {
+            const d = x.sets ? x.sets.every((q) => q.done) : x.done;
+            return <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i === A.idx ? C.sun : d ? C.sage : C.line }} />;
+          })}
+        </div>
+        <div className="sub num" style={{ fontSize: 14 }}>{A.idx + 1} / {n}</div>
+      </div>
+      <div style={{ background: C.panel, borderRadius: 20, height: 230, marginTop: 14, padding: 8, position: "relative" }}>
+        <Figure pose={ex.pose} imp={ex.imp} label={ex.name} />
+        {A.back === "tight" && SPINE.includes(it.id) && <div style={{ position: "absolute", left: 12, top: 10, fontSize: 12, background: C.deep, padding: "4px 10px", borderRadius: 999, color: C.sun }}>Back: go 10% lighter</div>}
+      </div>
+      <h1 className="h1" style={{ marginTop: 16, fontSize: 26 }}>{ex.name}</h1>
+      <div className="sub" style={{ fontSize: 15 }}>
+        {timed ? (it.min ? `${it.min} minutes` : `${it.sec} seconds`) : `${it.n} × ${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`}${it.note ? ` ${it.note}` : ""} · rest ${Math.floor(it.rest / 60)}:${String(it.rest % 60).padStart(2, "0")}`}
+        {it.note && timed ? ` · ${it.note}` : ""}
+      </div>
+      {it.pair && EX[it.pair] && <div style={{ fontSize: 14, color: C.sage, marginTop: 4 }}>Superset with {EX[it.pair].name}: alternate sets, rest after both.</div>}
+      <ul style={{ paddingLeft: 18, margin: "10px 0 0", lineHeight: 1.55, fontSize: 15 }}>{ex.cues.map((c) => <li key={c}>{c}</li>)}</ul>
+      {it.sets && (it.hint || it.last) && <div style={{ marginTop: 12, padding: "10px 14px", borderLeft: `3px solid ${C.sun}`, background: C.deep, fontSize: 14, lineHeight: 1.45 }}>{it.hint ? it.hint + " " : ""}{it.last ? <span style={{ color: C.mist }}> Last time {fmtShort(it.last.date)}: {it.last.sets.map((q) => (it.bw ? q.r : `${q.w}×${q.r}`)).join(", ")}</span> : null}</div>}
+
+      {timed ? (
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button className="pill ghost" onClick={() => setTimer({ until: Date.now() + (it.min ? it.min * 60 : it.sec) * 1000, label: ex.name })}><Timer size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Start timer</button>
+          <button className="pill" style={{ flex: 1, background: it.done ? C.sage : C.sun, color: C.night }} onClick={() => setItem({ done: !it.done })}>{it.done ? "Done ✓" : "Mark done"}</button>
+        </div>
+      ) : (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", gap: 8, fontSize: 12, color: C.mist, padding: "0 0 4px 28px" }}>
+            {!it.bw && <div style={{ width: 146, textAlign: "center" }}>kg</div>}
+            <div style={{ width: 146, textAlign: "center" }}>{it.id === "carry" ? "metres" : "reps"}</div>
+          </div>
+          {it.sets.map((q, j) => (
+            <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", opacity: q.done ? 0.7 : 1 }}>
+              <div className="num" style={{ width: 20, color: C.mist }}>{j + 1}</div>
+              {!it.bw && <Stepper value={q.w} step={EX[it.id].inc || 2.5} dec onChange={(v) => setS((o) => ({ ...o, active: { ...o.active, items: o.active.items.map((x, i) => i === o.active.idx ? { ...x, sets: x.sets.map((qq, k) => (k === j || (k > j && !qq.done) ? { ...qq, w: v } : qq)) } : x) } }))} />}
+              <Stepper value={q.r} step={1} onChange={(v) => setSet(j, { r: v })} width={52} />
+              <Toggle on={q.done} label={`Set ${j + 1} done`} onClick={() => { setSet(j, { done: !q.done }); if (!q.done && j < it.sets.length - 1) setTimer({ until: Date.now() + it.rest * 1000, label: "Rest" }); }} />
+            </div>
+          ))}
+          <button onClick={() => setItem({ sets: [...it.sets, { ...it.sets[it.sets.length - 1], done: false }] })} style={{ color: C.mist, fontSize: 14, padding: "8px 0" }}>+ Add a set</button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10, marginTop: 20, paddingBottom: timer ? 70 : 0 }}>
+        <button className="pill ghost" aria-label="Previous exercise" disabled={A.idx === 0} style={{ opacity: A.idx === 0 ? 0.4 : 1 }} onClick={() => setA((a) => ({ ...a, idx: a.idx - 1 }))}><ChevronLeft size={18} /></button>
+        {A.idx < n - 1
+          ? <button className="pill go" style={{ flex: 1 }} onClick={() => { setA((a) => ({ ...a, idx: a.idx + 1 })); setTimer(null); }}>Next: {EX[A.items[A.idx + 1].id].name} <ChevronRight size={16} style={{ verticalAlign: -3 }} /></button>
+          : <button className="pill go" style={{ flex: 1 }} onClick={() => { setA((a) => ({ ...a, phase: "done" })); setTimer(null); }}>Finish session</button>}
+      </div>
+      <button onClick={() => { if (sure) { setS((o) => ({ ...o, active: null })); setSure(false); } else setSure(true); }} style={{ color: sure ? C.rose : C.mist, fontSize: 13, marginTop: 18 }}>{sure ? "Tap again to discard. Nothing will be saved." : "Discard session"}</button>
+      {Timerbar}
+    </div>
+  );
+}
+
+/* ---------- Progress ---------- */
+function Progress({ s, setS, today }) {
+  const trackWeight = { ...DEFAULT_PLAN, ...(s.plan || {}) }.trackWeight;
+  const W = [...s.weighins].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const cur = W.length ? W[W.length - 1].kg : s.profile.startKg;
+  const [entry, setEntry] = useState(cur);
+  const lost = Math.round((s.profile.startKg - cur) * 10) / 10;
+  const prev = W.length > 1 ? W[W.length - 2].kg : null;
+  const saveW = () => setS((o) => ({ ...o, weighins: [...o.weighins.filter((x) => x.date !== today), { date: today, kg: Number(entry) }] }));
+  const ws = weekStart(today);
+  const weekCount = s.sessions.filter((x) => x.date >= ws).length;
+  const planDays = [0, 1, 2, 3, 4, 5, 6].filter((d) => DAYS[d] && DAYS[d].items.length).length;
+  const last7 = Array.from({ length: 7 }).map((_, i) => s.habits[addDays(today, -i)] || blankHabits);
+  const avgP = Math.round(last7.reduce((n, h) => n + (h.protein || 0), 0) / 7);
+  const avgW = (last7.reduce((n, h) => n + (h.water || 0), 0) / 7000).toFixed(1);
+  const lifts = [["squat", 60], ["bench", 40], ["rdl", 40], ["ohp", 20], ["row", 40], ["dbpress", 7]];
+  const [csv, setCsv] = useState(null);
+  const exportCsv = () => {
+    const rows = [["date", "session", "exercise", "set", "kg", "reps"]];
+    s.sessions.forEach((x) => x.items.forEach((it) => { if (it.sets) it.sets.forEach((q, j) => { if (q.done) rows.push([x.date, x.title, EX[it.id].name, j + 1, q.w, q.r]); }); else if (it.done) rows.push([x.date, x.title, EX[it.id].name, "", "", it.min ? `${it.min} min` : `${it.sec} s`]); }));
+    const text = rows.map((r) => r.join(",")).join("\n");
+    setCsv(text);
+    try { navigator.clipboard && navigator.clipboard.writeText(text); } catch (e) {}
+  };
+  return (
+    <div className="wrap" style={{ paddingTop: 28 }}>
+      <h1 className="h1">Progress</h1>
+      {trackWeight && (<>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 18 }}>
+        <span className="num" style={{ fontSize: 56, lineHeight: 1 }}>{cur}</span><span className="sub">kg now</span>
+      </div>
+      <div className="sub" style={{ marginTop: 4, fontSize: 15 }}>
+        <span style={{ color: C.sage, fontWeight: 700 }}>{lost > 0 ? `${lost} kg down` : "Starting line"}</span> from {s.profile.startKg} kg
+        {s.profile.goalKg ? ` · ${Math.round((cur - s.profile.goalKg) * 10) / 10} kg to ${s.profile.goalKg}` : ""}
+        {prev != null ? ` · ${Math.round((cur - prev) * 10) / 10 > 0 ? "+" : ""}${Math.round((cur - prev) * 10) / 10} since last weigh-in` : ""}
+      </div>
+      <div style={{ height: 180, marginTop: 14, marginLeft: -18 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={W.map((x) => ({ d: fmtShort(x.date), kg: x.kg }))}>
+            <XAxis dataKey="d" stroke={C.mist} fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis domain={[Math.min(s.profile.goalKg || 999, cur) - 1, s.profile.startKg + 1]} stroke={C.mist} fontSize={11} tickLine={false} axisLine={false} width={40} />
+            <ReferenceLine y={s.profile.startKg} stroke={C.line} strokeDasharray="4 4" label={{ value: `Start ${s.profile.startKg}`, fill: C.mist, fontSize: 11, position: "insideTopRight" }} />
+            {s.profile.goalKg && <ReferenceLine y={s.profile.goalKg} stroke={C.sage} strokeDasharray="4 4" label={{ value: `Goal ${s.profile.goalKg}`, fill: C.sage, fontSize: 11, position: "insideBottomRight" }} />}
+            <Tooltip contentStyle={{ background: C.deep, border: "none", borderRadius: 10, color: C.paper }} />
+            <Line type="monotone" dataKey="kg" stroke={C.sun} strokeWidth={3} dot={{ r: 4, fill: C.sun }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+        <Stepper value={entry} step={0.1} dec onChange={setEntry} unit="kg" width={84} />
+        <button className="pill go" onClick={saveW}>Log today's weight</button>
+      </div>
+      <p className="sub" style={{ marginTop: 8 }}>Weigh in Friday mornings, straight after the toilet, before food. Low-water days make the scale lie.</p>
+      </>)}
+
+      <h2 className="h2" style={{ marginTop: 28 }}>This week</h2>
+      <div style={{ display: "flex", gap: 28, marginTop: 8 }}>
+        <div><div className="num" style={{ fontSize: 30 }}>{weekCount}<span style={{ fontSize: 16, color: C.mist }}>/{planDays}</span></div><div className="sub">sessions</div></div>
+        <div><div className="num" style={{ fontSize: 30, color: avgP >= s.profile.proteinTarget ? C.sage : C.paper }}>{avgP}<span style={{ fontSize: 16, color: C.mist }}> g</span></div><div className="sub">protein avg</div></div>
+        <div><div className="num" style={{ fontSize: 30 }}>{avgW}<span style={{ fontSize: 16, color: C.mist }}> L</span></div><div className="sub">water avg</div></div>
+      </div>
+
+      <h2 className="h2" style={{ marginTop: 28 }}>Strength</h2>
+      <div className="sub">Holding these while the weight drops means you're losing fat, not muscle.</div>
+      {lifts.map(([id, start]) => {
+        const b = bestFor(s.sessions, id);
+        return (
+          <div key={id} style={{ display: "flex", alignItems: "center", padding: "12px 0", borderTop: `1px solid ${C.line}`, marginTop: id === "squat" ? 10 : 0 }}>
+            <div style={{ flex: 1, fontWeight: 600 }}>{EX[id].name}</div>
+            <div className="sub" style={{ marginRight: 14 }}>week 1: {start}</div>
+            <div className="num" style={{ fontSize: 20, color: b > start ? C.sage : C.paper }}>{b || start} kg</div>
+          </div>
+        );
+      })}
+
+      <h2 className="h2" style={{ marginTop: 28 }}>Recent sessions</h2>
+      {s.sessions.length === 0 && <p className="sub">Your first logged session shows up here.</p>}
+      {[...s.sessions].reverse().slice(0, 8).map((x, i) => (
+        <div key={i} style={{ padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+          <div style={{ display: "flex" }}><div style={{ flex: 1, fontWeight: 600 }}>{x.title}</div><div className="sub">{fmtShort(x.date)}{x.mins ? ` · ${x.mins} min` : ""}</div></div>
+          {x.note && <div className="sub" style={{ marginTop: 2 }}>{x.note}</div>}
+        </div>
+      ))}
+      <button className="pill ghost" style={{ marginTop: 16 }} onClick={exportCsv}><Copy size={15} style={{ verticalAlign: -2, marginRight: 6 }} />Copy log for the Google Sheet</button>
+      {csv && <textarea className="inp num" readOnly rows={5} value={csv} style={{ marginTop: 10, fontSize: 12 }} onFocus={(e) => e.target.select()} />}
+    </div>
+  );
+}
+
+/* ---------- Library ---------- */
+function Library({ openEx, openTight }) {
+  const [g, setG] = useState("strength");
+  const groups = [["strength", "Strength"], ["warm", "Movement block"], ["cardio", "Cardio"], ["stretch", "Stretches"], ["evening", "Evening"], ["desk", "Desk reset"]];
+  const ids = g === "desk" ? DESKR.map((x) => x[0]) : g === "evening" ? EVENING.map((x) => x[0]) : Object.keys(EX).filter((k) => EX[k].g === g);
+  return (
+    <div className="wrap" style={{ paddingTop: 28 }}>
+      <h1 className="h1">Library</h1>
+      <button className="pill go" style={{ width: "100%", marginTop: 14, padding: 14, fontSize: 16 }} onClick={openTight}>Something's tight — what do I stretch?</button>
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", margin: "16px 0" }}>
+        {groups.map(([k, t]) => (
+          <button key={k} onClick={() => setG(k)} style={{ padding: "8px 14px", borderRadius: 999, flexShrink: 0, background: g === k ? C.sun : C.panel, color: g === k ? C.night : C.paper, fontWeight: 600, fontSize: 14 }}>{t}</button>
+        ))}
+      </div>
+      {g === "desk" && <p className="sub" style={{ marginTop: -4 }}>Two minutes, once an hour, when you've been sitting or driving. Do them in order.</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {ids.map((id) => (
+          <button key={id} onClick={() => openEx(id)} style={{ background: C.panel, borderRadius: 16, padding: 10, textAlign: "left" }}>
+            <div style={{ height: 110 }}><Figure pose={EX[id].pose} imp={EX[id].imp} /></div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginTop: 6 }}>{EX[id].name}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Plan editor ---------- */
+const MINS_CHOICES = [20, 30, 45, 60, 75];
+function PlanSheet({ s, setS, onClose }) {
+  const plan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
+  const set = (patch) => setS((o) => ({ ...o, plan: { ...DEFAULT_PLAN, ...(o.plan || {}), ...patch } }));
+  const toggleDay = (d) => {
+    const next = plan.liftDays.includes(d) ? plan.liftDays.filter((x) => x !== d) : [...plan.liftDays, d];
+    if (next.length) set({ liftDays: next });
+  };
+  const preview = buildDays(plan);
+  const restCount = 7 - [...new Set(plan.liftDays)].length;
+  const ownDayWanted = plan.cardio === "own" || plan.stretch === "own";
+  const Row = ({ label, options, value, onPick }) => (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {options.map(([v, t]) => (
+          <button key={v} onClick={() => onPick(v)} aria-pressed={value === v}
+            style={{ padding: "9px 14px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: value === v ? C.sun : C.panel, color: value === v ? C.night : C.paper }}>{t}</button>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <Sheet onClose={onClose}>
+      <h2 className="h2" style={{ fontSize: 24 }}>Your plan</h2>
+      <p className="sub">Change any of this whenever life changes. The week rebuilds itself and your logged history stays exactly where it is.</p>
+
+      <div style={{ marginTop: 18 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Days you can lift</div>
+        <div style={{ display: "flex", gap: 5 }}>
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+            const on = plan.liftDays.includes(d);
+            return (
+              <button key={d} onClick={() => toggleDay(d)} aria-pressed={on}
+                style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, background: on ? C.sun : C.panel, color: on ? C.night : C.paper }}>{DOW[d]}</button>
+            );
+          })}
+        </div>
+        <div className="sub" style={{ marginTop: 8 }}>
+          {plan.liftDays.length >= 7
+            ? "Seven lifting days leaves nothing for recovery, and no room for a cardio or mobility day. Six is the most I'd run."
+            : `${plan.liftDays.length} lifting ${plan.liftDays.length === 1 ? "day" : "days"}, ${restCount} off.`}
+        </div>
+      </div>
+
+      <Row label="How long you've got" value={plan.mins} onPick={(v) => set({ mins: v })}
+        options={MINS_CHOICES.map((m) => [m, `${m} min`])} />
+
+      <Row label="Cardio" value={plan.cardio} onPick={(v) => set({ cardio: v })}
+        options={[["off", "Leave it out"], ["combined", "In each session"], ["own", "Its own day"]]} />
+
+      <Row label="Stretching" value={plan.stretch} onPick={(v) => set({ stretch: v })}
+        options={[["off", "Leave it out"], ["combined", "End of each session"], ["own", "Its own day"]]} />
+
+      {ownDayWanted && restCount === 0 && (
+        <p style={{ color: C.rose, fontSize: 14, marginTop: 10 }}>There's no day left for that. Free up a day above, or fold it into each session instead.</p>
+      )}
+
+      <div style={{ marginTop: 20, borderTop: `1px solid ${C.line}` }}>
+        {[["walk", "Walk on rest days", "A 45-minute walk instead of nothing"], ["trackWeight", "Track body weight", "Shows the weight chart and weigh-ins on Progress"]].map(([k, t, d]) => (
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: `1px solid ${C.line}` }}>
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>{t}</div><div className="sub">{d}</div></div>
+            <Toggle on={!!plan[k]} onClick={() => set({ [k]: !plan[k] })} label={t} />
+          </div>
+        ))}
+      </div>
+
+      <h3 className="h2" style={{ fontSize: 17, marginTop: 24 }}>Your week</h3>
+      {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+        const p = preview[d];
+        const lifts = p.items.filter((x) => x.sets).length;
+        const extras = p.items.length - lifts;
+        return (
+          <div key={d} style={{ display: "flex", gap: 12, padding: "9px 0", borderTop: `1px solid ${C.line}`, fontSize: 14 }}>
+            <div style={{ width: 42, color: C.mist, fontWeight: 600 }}>{DOW[d]}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600 }}>{p.title}</div>
+              <div className="sub">{lifts ? `${lifts} ${lifts === 1 ? "exercise" : "exercises"}` : ""}{lifts && extras ? " + " : ""}{extras ? `${extras} cardio/mobility` : ""}{!p.items.length ? "Nothing scheduled" : ""}</div>
+            </div>
+          </div>
+        );
+      })}
+      <button className="pill go" style={{ width: "100%", marginTop: 20, padding: 15 }} onClick={onClose}>Done</button>
+    </Sheet>
+  );
+}
+
+/* ---------- Coach ---------- */
+/* In the standalone app there is no Claude connection by default.
+   Everything here works offline except "Ask your coach", which needs an API key. */
+
+const QUICK = [
+  {
+    q: "What should I eat before the 4:15 session?",
+    a: "Not much, and that's fine. At 4:15 your body is running on yesterday's food, and Mounjaro will have your appetite low anyway.\n\nIf you want something: half a protein shake, or a banana. Small, quick, no fibre.\n\nThe meal that matters is the one after. Get 30–40 g of protein in within an hour or two of finishing — that's when the muscle you just trained gets rebuilt.",
+  },
+  {
+    q: "My back's tight. What do I do today?",
+    a: "Start the session and pick \"A bit tight\" on the back check. Squats, RDLs, lunges, swings, goblets, rows and carries all drop 10% and you stop two reps short.\n\nIf it's properly sore, pick \"Sore\" and the app swaps you to the back-care session: easy bike, bridges, dead bugs, cat-cow, hip flexor stretch, walk.\n\nStill sore after a week, or pain running down a leg? That's a physio call, not an app call.",
+  },
+  {
+    q: "I'm flat this morning. Give me a pep talk.",
+    a: "You're not flat, you're 41 and it's 4:15am. That's just what this hour feels like.\n\nHere's the deal: put five minutes on the bike. That's the whole commitment. If you still feel wrecked after five minutes, do the first lift properly and call it — that's in your program, it's not quitting.\n\nNine times out of ten you'll finish the session. The five minutes is the only decision you have to make.",
+  },
+  {
+    q: "How do I know I'm losing fat, not muscle?",
+    a: "Two numbers, side by side.\n\nThe scale should trend down about 0.5–1 kg a week. Your strength numbers on the Progress screen should hold or climb.\n\nIf the weight drops and the squat, bench, RDL and row hold, the loss is fat. If your lifts start sliding, that's the signal to lift your protein and make sure you're not under-eating.",
+  },
+  {
+    q: "I missed a few days. Where do I pick up?",
+    a: "Straight back in, nothing changes. Never miss two is the only rule.\n\nAfter more than 10 days off an exercise, the app holds the weight exactly where you left it instead of adding. Do that weight for the full reps, then earn the jump next time.\n\nDon't try to make up sessions. Just do today's.",
+  },
+  {
+    q: "What actually matters most right now?",
+    a: "In order:\n\n1. Protein at 130 g+. On Mounjaro this is the thing that decides whether the weight coming off is fat or muscle.\n2. Turning up six days. Not perfect sessions — turning up.\n3. Water at 2.5 L. Low water makes the scale lie and makes you feel worse than you are.\n4. Getting off the chair every hour.\n\nEverything else is detail.",
+  },
+];
+
+const ICS_TZ = [
+  "BEGIN:VTIMEZONE",
+  "TZID:Pacific/Auckland",
+  "BEGIN:STANDARD",
+  "DTSTART:19700405T030000",
+  "TZOFFSETFROM:+1300",
+  "TZOFFSETTO:+1200",
+  "RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU",
+  "TZNAME:NZST",
+  "END:STANDARD",
+  "BEGIN:DAYLIGHT",
+  "DTSTART:19700927T020000",
+  "TZOFFSETFROM:+1200",
+  "TZOFFSETTO:+1300",
+  "RRULE:FREQ=YEARLY;BYMONTH=9;BYDAY=-1SU",
+  "TZNAME:NZDT",
+  "END:DAYLIGHT",
+  "END:VTIMEZONE",
+];
+const ICSDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+function icsEvent({ uid, day, start, mins, title, desc, alarm }) {
+  const nextOn = (() => {
+    let k = todayKey();
+    for (let i = 0; i < 8; i++) { if (dowOf(k) === day) return k; k = addDays(k, 1); }
+    return todayKey();
+  })();
+  const stamp = nextOn.replace(/-/g, "");
+  const [hh, mm] = start.split(":").map(Number);
+  const endM = hh * 60 + mm + mins;
+  const pad = (n) => String(n).padStart(2, "0");
+  const s = `${pad(hh)}${pad(mm)}00`;
+  const e = `${pad(Math.floor(endM / 60) % 24)}${pad(endM % 60)}00`;
+  return [
+    "BEGIN:VEVENT",
+    `UID:${uid}@sharpen.local`,
+    `DTSTAMP:${stamp}T000000Z`,
+    `DTSTART;TZID=Pacific/Auckland:${stamp}T${s}`,
+    `DTEND;TZID=Pacific/Auckland:${stamp}T${e}`,
+    `RRULE:FREQ=WEEKLY;BYDAY=${ICSDAY[day]}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${(desc || "").replace(/\n/g, "\\n")}`,
+    ...(alarm ? ["BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${title}`, "TRIGGER:PT0M", "END:VALARM"] : []),
+    "END:VEVENT",
+  ];
+}
+
+function buildIcs({ training, desk, stretch }) {
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Sharpen//EN", "CALSCALE:GREGORIAN", ...ICS_TZ];
+  if (training) {
+    for (let d = 0; d <= 6; d++) {
+      const plan = DAYS[d];
+      const isWalk = d === 0;
+      lines.push(
+        ...icsEvent({
+          uid: `sharpen-train-${d}`,
+          day: d,
+          start: isWalk ? "07:00" : "04:15",
+          mins: isWalk ? 45 : 45,
+          title: `Sharpen: ${plan.title}`,
+          desc: `${plan.sub}\n\n5 min warm-up (bike or rower), then the movement block, then the session.`,
+          alarm: true,
+        })
+      );
+    }
+  }
+  if (desk) {
+    [["09:30", "a"], ["11:30", "b"], ["14:30", "c"]].forEach(([t, tag]) => {
+      for (let d = 1; d <= 5; d++) {
+        lines.push(
+          ...icsEvent({
+            uid: `sharpen-desk-${d}-${tag}`,
+            day: d,
+            start: t,
+            mins: 5,
+            title: "Desk reset (2 min)",
+            desc: "Chin tucks, hip flexor stretch, chair back extension, calf raises, marches, core squeeze.",
+            alarm: true,
+          })
+        );
+      }
+    });
+  }
+  if (stretch) {
+    for (let d = 0; d <= 6; d++) {
+      lines.push(
+        ...icsEvent({
+          uid: `sharpen-stretch-${d}`,
+          day: d,
+          start: "19:45",
+          mins: 15,
+          title: "Evening stretch",
+          desc: "Hip flexors, hamstrings, figure-4, chest opener, twists, calves, child's pose, core squeeze. Then bed by 8.",
+          alarm: true,
+        })
+      );
+    }
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+function download(name, text, type) {
+  try {
+    const blob = new Blob([text], { type: type || "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function callClaude(apiKey, model, body) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({ model: model || "claude-sonnet-5", max_tokens: 800, ...body }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(res.status === 401 ? "key" : t.slice(0, 120) || String(res.status));
+  }
+  const data = await res.json();
+  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+}
+
+function coachSystem(s, today) {
+  const recent = s.sessions.slice(-4).map((x) => `${x.date} ${x.title}: ` + x.items.filter((i) => i.sets).map((i) => `${EX[i.id] ? EX[i.id].name : i.id} ${i.sets.filter((q) => q.done).map((q) => `${q.w || "bw"}x${q.r}`).join(" ")}`).join("; ") + (x.note ? ` (note: ${x.note})` : "")).join("\n");
+  const h = { ...blankHabits, ...(s.habits[today] || {}) };
+  const W = [...s.weighins].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return `You are Ben's personal coach inside his training app. Push him like a good coach: direct, demanding and energetic, no excuses entertained, never shaming. Tie every push to a concrete gain: his ${s.profile.goalKg || 95} kg goal weight, keeping muscle while the fat goes, keeping up with his boys, energy, heart health, circulation. Plain New Zealand English, no jargon. Keep replies short (under 120 words) unless he asks for detail. He uses voice-to-text, so interpret typos sensibly.
+About Ben: 41, about 175 cm, started at ${s.profile.startKg} kg, now ${W.length ? W[W.length - 1].kg : "?"} kg. Vegetarian. On Mounjaro (tirzepatide) prescribed by his GP. Goal: lose fat while keeping muscle. Protein target ${s.profile.proteinTarget} g+, water ${s.profile.waterTarget / 1000} L+. Trains 4:15 to 5:00am in a home garage gym, six days: Mon Lower A (squat), Tue Upper Push, Wed Cardio + Mobility, Thu Lower B (hinge), Fri Upper Pull, Sat Full Body, Sun walk. Every workout starts with a 5 min warm-up (bike or rower) then his "movement block": lymphatic hopping, body waves, arm swings, trunk twists, dead arms, golf swings, marches. Program rules from his plan: double progression, stop compound sets 1-2 reps short of failure, bad day = do the first lift properly and finish, deload every 6th week. After a break of more than 10 days from a session, weights stay the same as last time, never go up. Goal weight ${s.profile.goalKg || 95} kg. Has had lower back tightness when squats, RDLs and lunges were loaded in the same week during a deficit. Long days of sitting and driving. Sleep apnoea well controlled with an AirMini; bed by 8pm, up at 4am. Also working on circulation and erectile function with his GP; exercise, weight loss and pelvic floor training ("core squeeze" in the app) are part of his plan. Be discreet: never raise this topic yourself and call it "circulation" or "vitality" unless he uses other words first. Mounjaro jab day is Saturday.
+Equipment: power rack, 20 kg bar and plates, EZ bar, landmine, hex dumbbells to 35 kg, kettlebells, adjustable bench with leg curl/extension and preacher, spin bike, air rower, plyo boxes, bands, ab roller, push-up board, foam roller. No pull-up bar.
+Today (${today}): protein ${h.protein} g, water ${h.water} ml, steps ${h.steps}, desk breaks ${h.moves}.
+Recent sessions:\n${recent || "none logged yet"}
+Rules: evidence-based; never diagnose; for medication doses, side effects or pain that persists, suggest his GP or physio. Celebrate consistency, reframe missed days without guilt ("never miss two").`;
+}
+
+function planSummary(s) {
+  const plan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
+  const n = [...new Set(plan.liftDays)].length;
+  const bits = [`${n} lifting ${n === 1 ? "day" : "days"} a week`, `${plan.mins} minutes a session`];
+  bits.push(plan.cardio === "off" ? "no cardio" : plan.cardio === "own" ? "cardio on its own day" : "cardio in each session");
+  bits.push(plan.stretch === "off" ? "no stretching" : plan.stretch === "own" ? "stretching on its own day" : "stretching at the end of each session");
+  if (!plan.trackWeight) bits.push("weight not tracked");
+  return bits.join(" · ") + ".";
+}
+
+function Section({ title, sub, children, first }) {
+  return (
+    <div style={{ marginTop: first ? 22 : 30 }}>
+      <h2 className="h2">{title}</h2>
+      {sub && <div className="sub">{sub}</div>}
+      {children}
+    </div>
+  );
+}
+
+function Coach({ s, setS, today, openPlan }) {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [newWhy, setNewWhy] = useState("");
+  const [openO, setOpenO] = useState(null);
+  const [openQ, setOpenQ] = useState(null);
+  const [showKey, setShowKey] = useState(false);
+  const [keyDraft, setKeyDraft] = useState(s.apiKey || "");
+  const [ics, setIcs] = useState({ training: true, desk: true, stretch: true });
+  const [note, setNote] = useState(null);
+  const endRef = useRef(null);
+  const fileRef = useRef(null);
+  const staleBackup = !s.lastBackup || daysBetween(s.lastBackup, today) > 14;
+  useEffect(() => { if (endRef.current) endRef.current.scrollIntoView({ block: "end" }); }, [s.chat.length, busy]);
+
+  const days = s.calendar && s.calendar.days ? s.calendar.days : [];
+  const isTravel = (k) => days.some((d) => d.date === k && d.travel);
+  const toggleTravel = (k) =>
+    setS((o) => {
+      const list = (o.calendar && o.calendar.days ? o.calendar.days : []).filter((d) => d.date !== k);
+      const was = (o.calendar && o.calendar.days ? o.calendar.days : []).some((d) => d.date === k && d.travel);
+      return { ...o, calendar: { days: was ? list : [...list, { date: k, travel: true, summary: "Away" }] } };
+    });
+
+  const send = async () => {
+    const text = msg.trim();
+    if (!text || busy) return;
+    if (!s.apiKey) { setShowKey(true); return; }
+    const hist = [...s.chat, { role: "user", text }].slice(-20);
+    setS((o) => ({ ...o, chat: hist }));
+    setMsg(""); setBusy(true); setErr(null);
+    try {
+      const reply = await callClaude(s.apiKey, s.model, {
+        system: coachSystem(s, today),
+        messages: hist.map((m) => ({ role: m.role, content: m.text })),
+      });
+      setS((o) => ({ ...o, chat: [...o.chat, { role: "assistant", text: reply }].slice(-30) }));
+    } catch (e) {
+      setErr(e.message === "key" ? "That API key was rejected. Check it and try again." : "The coach didn't answer. Check your connection and send again.");
+    }
+    setBusy(false);
+  };
+
+  const backup = () => {
+    const ok = download(`sharpen-backup-${today}.json`, JSON.stringify({ ...s, apiKey: "" }, null, 2), "application/json");
+    if (ok) setS((o) => ({ ...o, lastBackup: today }));
+    setNote(ok ? "Backup saved to your downloads. Move it to Drive or Dropbox so it's off the phone." : "Couldn't save the backup file.");
+  };
+  const restore = (file) => {
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const v = JSON.parse(r.result);
+        if (!v || !v.profile) throw new Error("bad");
+        setS({ ...DEFAULT, ...v, profile: { ...DEFAULT.profile, ...v.profile } });
+        setNote("Backup restored.");
+      } catch (e) { setNote("That file didn't look like a Sharpen backup."); }
+    };
+    r.readAsText(file);
+  };
+
+  return (
+    <div className="wrap" style={{ paddingTop: 28 }}>
+      <h1 className="h1">Coach</h1>
+
+      <Section first title="Your plan" sub={planSummary(s)}>
+        <button className="pill go" style={{ marginTop: 12 }} onClick={openPlan}>Change my plan</button>
+      </Section>
+
+      <Section title="Your reasons" sub="These rotate on the Today screen. Make them yours.">
+        {s.whys.map((w, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, padding: "12px 0", borderTop: `1px solid ${C.line}`, marginTop: i === 0 ? 10 : 0 }}>
+            <div style={{ flex: 1, lineHeight: 1.45 }}>{w}</div>
+            <button aria-label="Remove reason" onClick={() => setS((o) => ({ ...o, whys: o.whys.filter((_, k) => k !== i) }))} style={{ color: C.mist, padding: 4 }}><X size={16} /></button>
+          </div>
+        ))}
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <input className="inp" value={newWhy} onChange={(e) => setNewWhy(e.target.value)} placeholder="Add a reason in your own words" />
+          <button className="pill go" onClick={() => { if (newWhy.trim()) { setS((o) => ({ ...o, whys: [...o.whys, newWhy.trim()] })); setNewWhy(""); } }}>Add</button>
+        </div>
+      </Section>
+
+      <Section title="What it's doing for you">
+        {OUTCOMES.map((o, i) => (
+          <div key={o.t} style={{ borderTop: `1px solid ${C.line}` }}>
+            <button onClick={() => setOpenO(openO === i ? null : i)} aria-expanded={openO === i} style={{ display: "flex", width: "100%", textAlign: "left", padding: "13px 0", fontWeight: 600 }}>
+              <span style={{ flex: 1 }}>{o.t}</span><ChevronRight size={18} style={{ transform: openO === i ? "rotate(90deg)" : "none", transition: "transform .2s" }} />
+            </button>
+            {openO === i && <p className="sub" style={{ marginTop: -4, paddingBottom: 12, fontSize: 15, color: C.paper, opacity: 0.85 }}>{o.d}</p>}
+          </div>
+        ))}
+      </Section>
+
+      <Section title="Travel days" sub="Tap any day you'll be away. Those days switch to the 20-minute hotel session.">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginTop: 12 }}>
+          {Array.from({ length: 14 }).map((_, i) => {
+            const k = addDays(weekStart(today), i);
+            const on = isTravel(k);
+            const past = k < today;
+            return (
+              <button key={k} onClick={() => toggleTravel(k)} aria-pressed={on} disabled={past}
+                style={{ padding: "8px 2px", borderRadius: 10, background: on ? C.sun : C.panel, color: on ? C.night : C.paper, opacity: past ? 0.35 : 1, fontSize: 11, fontWeight: 600, lineHeight: 1.3 }}>
+                <div>{DOW[dowOf(k)]}</div>
+                <div className="num" style={{ fontSize: 15 }}>{keyDate(k).getUTCDate()}</div>
+                <div style={{ height: 12 }}>{on ? "✈" : ""}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Reminders on your phone" sub="The app can't buzz your phone on its own. This makes a calendar file instead — import it once and your phone's calendar does the reminding, forever.">
+        <div style={{ marginTop: 12 }}>
+          {[["training", "Training sessions", "Mon–Sat 4:15am, Sunday walk 7am"], ["desk", "Desk resets", "Weekdays 9:30, 11:30 and 2:30"], ["stretch", "Evening stretch", "Every day at 7:45pm"]].map(([k, t, d]) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+              <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>{t}</div><div className="sub">{d}</div></div>
+              <Toggle on={ics[k]} onClick={() => setIcs({ ...ics, [k]: !ics[k] })} label={t} />
+            </div>
+          ))}
+        </div>
+        <button className="pill go" style={{ marginTop: 14 }}
+          onClick={() => { const ok = download("sharpen-reminders.ics", buildIcs(ics), "text/calendar;charset=utf-8"); setNote(ok ? "Calendar file saved. Open it and your phone will offer to add the reminders." : "Couldn't make the calendar file."); }}>
+          <CalendarDays size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Make my reminders file
+        </button>
+        <p className="sub" style={{ marginTop: 8 }}>Repeating weekly, with an alert at the start of each one. Delete any you don't want straight from your calendar.</p>
+      </Section>
+
+      <Section title="Ask your coach">
+        <div className="sub">Six answers below work with no signal. For a live back-and-forth, add an API key.</div>
+        <div style={{ marginTop: 12 }}>
+          {QUICK.map((x, i) => (
+            <div key={x.q} style={{ borderTop: `1px solid ${C.line}` }}>
+              <button onClick={() => setOpenQ(openQ === i ? null : i)} aria-expanded={openQ === i} style={{ display: "flex", width: "100%", textAlign: "left", padding: "13px 0", fontWeight: 600, gap: 10 }}>
+                <span style={{ flex: 1 }}>{x.q}</span><ChevronRight size={18} style={{ flexShrink: 0, transform: openQ === i ? "rotate(90deg)" : "none", transition: "transform .2s" }} />
+              </button>
+              {openQ === i && <p style={{ marginTop: -4, paddingBottom: 14, fontSize: 15, lineHeight: 1.5, whiteSpace: "pre-wrap", opacity: 0.9 }}>{x.a}</p>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          {s.chat.map((m, i) => (
+            <div key={i} style={{ margin: "10px 0", display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+              <div style={{ maxWidth: "85%", padding: "10px 14px", borderRadius: 16, background: m.role === "user" ? C.sun : C.panel, color: m.role === "user" ? C.night : C.paper, whiteSpace: "pre-wrap", lineHeight: 1.45, fontSize: 15 }}>{m.text}</div>
+            </div>
+          ))}
+          {busy && <div className="sub">Coach is thinking…</div>}
+          {err && <p style={{ color: C.rose, fontSize: 14 }}>{err}</p>}
+          <div ref={endRef} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <input className="inp" value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={s.apiKey ? "Type or dictate" : "Add a key to chat live"} />
+            <button aria-label="Send" className="pill go" style={{ padding: "0 16px" }} onClick={send}><Send size={18} /></button>
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+            <button onClick={() => setShowKey(!showKey)} style={{ color: C.sun, fontSize: 13 }}>{s.apiKey ? "Change API key" : "Add an API key"}</button>
+            {s.chat.length > 0 && <button onClick={() => setS((o) => ({ ...o, chat: [] }))} style={{ color: C.mist, fontSize: 13 }}>Clear chat</button>}
+          </div>
+          {showKey && (
+            <div style={{ marginTop: 12, padding: 14, borderRadius: 14, background: C.panel }}>
+              <p className="sub" style={{ marginTop: 0 }}>
+                A live coach needs an Anthropic API key from console.anthropic.com. It's pay-as-you-go and a month of chatting costs cents. The key is stored only on this phone and goes straight to Anthropic — it never passes through GitHub or anywhere else.
+              </p>
+              <input className="inp" type="password" value={keyDraft} onChange={(e) => setKeyDraft(e.target.value)} placeholder="sk-ant-..." autoComplete="off" />
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button className="pill go" onClick={() => { setS((o) => ({ ...o, apiKey: keyDraft.trim() })); setShowKey(false); setErr(null); }}>Save key</button>
+                {s.apiKey && <button className="pill ghost" onClick={() => { setS((o) => ({ ...o, apiKey: "" })); setKeyDraft(""); }}>Remove</button>}
+              </div>
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section title="Where your data lives" sub="Everything — your plan, every set, every weigh-in — is stored in this browser on this phone. It never leaves the device and no account is needed. Clearing your browsing data would wipe it, so keep a backup.">
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: staleBackup ? C.panel : "transparent", border: staleBackup ? `1px solid ${C.sun}` : "none" }}>
+          <div style={{ fontWeight: 600 }}>{s.lastBackup ? `Last backup: ${fmtShort(s.lastBackup)}` : "No backup saved yet"}</div>
+          <div className="sub">{staleBackup ? "Worth saving one now — it takes two seconds." : "You're covered."}</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <button className="pill ghost" onClick={backup}><Download size={15} style={{ verticalAlign: -2, marginRight: 6 }} />Save a backup</button>
+          <button className="pill ghost" onClick={() => fileRef.current && fileRef.current.click()}><Upload size={15} style={{ verticalAlign: -2, marginRight: 6 }} />Restore a backup</button>
+          <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: "none" }} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) restore(f); e.target.value = ""; }} />
+        </div>
+        {note && <p className="sub" style={{ marginTop: 10, color: C.sage }}>{note}</p>}
+        <p className="sub" style={{ marginTop: 10 }}>The backup file carries everything except your API key. Restoring it on a new phone brings the whole history across.</p>
+        <p className="sub" style={{ marginTop: 6 }}>Version {APP_VERSION}.</p>
+      </Section>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+export default function App() {
+  const [s, setS] = useState(DEFAULT);
+  const [loaded, setLoaded] = useState(false);
+  const [saveErr, setSaveErr] = useState(false);
+  const [tab, setTab] = useState("today");
+  const [exOpen, setExOpen] = useState(null);
+  const [routine, setRoutine] = useState(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [tightOpen, setTightOpen] = useState(false);
+  const today = todayKey();
+  const [pickDay, setPickDay] = useState(dowOf(today));
+  applyPlan(s.plan); // rebuild the week from the saved plan before anything renders
+
+  useEffect(() => {
+    (() => {
+      try {
+        const raw = store.get();
+        if (raw) {
+          const v = JSON.parse(raw);
+          let next = { ...DEFAULT, ...v, profile: { ...DEFAULT.profile, ...(v.profile || {}) } };
+          if ((v.ver || 1) < 2) {
+            const dates = new Set((v.sessions || []).map((x) => x.date));
+            const wdates = new Set((v.weighins || []).map((x) => x.date));
+            next = { ...next, ver: 2,
+              profile: { ...next.profile, goalKg: 95, jabDay: 6, shakeG: 25, barG: 20 },
+              sessions: [...SEED_SESSIONS.filter((x) => !dates.has(x.date)), ...(v.sessions || [])].sort((a, b) => (a.date < b.date ? -1 : 1)),
+              weighins: [...SEED_WEIGH.filter((x) => !wdates.has(x.date)), ...(v.weighins || [])] };
+          }
+          setS(next);
+        }
+      } catch (e) { /* first run: nothing stored yet */ }
+      setLoaded(true);
+    })();
+  }, []);
+  useEffect(() => {
+    if (!loaded) return;
+    const t = setTimeout(() => { setSaveErr(!store.set(JSON.stringify(s))); }, 400);
+    return () => clearTimeout(t);
+  }, [s, loaded]);
+
+  const h = { ...blankHabits, ...(s.habits[today] || {}) };
+  const P = s.profile;
+  const dow = dowOf(today);
+  const trained = s.sessions.some((x) => x.date === today);
+  const isJab = P.jabDay != null && P.jabDay === dow;
+  const checks = [trained, h.protein >= P.proteinTarget, h.water >= P.waterTarget, h.steps >= P.stepsTarget, h.moves >= P.movesTarget, h.pelvic, h.stretch, h.bed];
+  if (isJab) checks.push(h.jab);
+  const done = checks.filter(Boolean).length;
+  const yest = addDays(today, -1);
+  const cal = s.calendar && s.calendar.days ? s.calendar.days.find((d) => d.date === today) : null;
+  const curKg = [...s.weighins].sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-1)[0];
+  const tracking = { ...DEFAULT_PLAN, ...(s.plan || {}) }.trackWeight;
+  const coach = coachLine({
+    hour: nzHour(), dow, trained, done, total: checks.length, name: P.name, goal: tracking ? P.goalKg || 95 : null,
+    toGo: curKg && P.goalKg ? Math.round((curKg.kg - P.goalKg) * 10) / 10 : "A few", weighedToday: s.weighins.some((w) => w.date === today), jab: isJab && !h.jab, travel: cal && cal.travel && !trained,
+    weekCount: s.sessions.filter((x) => x.date >= weekStart(today)).length,
+    missedYesterday: dowOf(yest) !== 0 && !s.sessions.some((x) => x.date === yest) && s.sessions.length > 0,
+  });
+  const goTrain = (key) => { setPickDay(key); setTab("train"); };
+  useEffect(() => { window.scrollTo(0, 0); }, [tab, s.active ? s.active.idx : -1, s.active ? s.active.phase : ""]);
+
+  if (!loaded) return <div className="sh" style={{ display: "grid", placeItems: "center" }}><style>{css}</style><div className="sub">Loading your log…</div></div>;
+
+  const tabs = [["today", "Today", Sunrise], ["train", "Train", Dumbbell], ["progress", "Progress", TrendingUp], ["library", "Library", BookOpen], ["coach", "Coach", MessageCircle]];
+  return (
+    <div className="sh">
+      <style>{css}</style>
+      {saveErr && <div style={{ background: C.rose, color: C.night, padding: "8px 18px", fontSize: 14 }}>Couldn't save to this phone's storage. Your changes are on screen but won't survive a reload. Private browsing mode is the usual cause.</div>}
+      {tab === "today" && <Today s={s} setS={setS} today={today} goTrain={goTrain} openEx={setExOpen} openRoutine={setRoutine} openTight={() => setTightOpen(true)} habitsDone={done} habitsTotal={checks.length} coach={coach} />}
+      {tab === "train" && <Train s={s} setS={setS} today={today} pickDay={pickDay} setPickDay={setPickDay} openEx={setExOpen} />}
+      {tab === "progress" && <Progress s={s} setS={setS} today={today} />}
+      {tab === "library" && <Library openEx={setExOpen} openTight={() => setTightOpen(true)} />}
+      {tab === "coach" && <Coach s={s} setS={setS} today={today} openPlan={() => setPlanOpen(true)} />}
+      {exOpen && <ExerciseSheet id={exOpen} onClose={() => setExOpen(null)} />}
+      {routine && <RoutineSheet which={routine} onClose={() => setRoutine(null)} />}
+      {planOpen && <PlanSheet s={s} setS={setS} onClose={() => setPlanOpen(false)} />}
+      {tightOpen && <TightSheet onClose={() => setTightOpen(false)} openEx={(id) => { setTightOpen(false); setExOpen(id); }} />}
+      <nav style={{ position: "fixed", left: 0, right: 0, bottom: 0, background: C.deep, borderTop: `1px solid ${C.line}`, zIndex: 40, paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div style={{ display: "flex", maxWidth: 560, margin: "0 auto" }}>
+          {tabs.map(([k, t, Icon]) => (
+            <button key={k} onClick={() => setTab(k)} aria-current={tab === k ? "page" : undefined} style={{ flex: 1, padding: "10px 0 12px", color: tab === k ? C.sun : C.mist, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600 }}>
+              <Icon size={22} />{t}{k === "train" && s.active ? " ·" : ""}
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
