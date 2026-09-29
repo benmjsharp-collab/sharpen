@@ -939,12 +939,16 @@ function coachLine({ hour, dow, trained, done, total, weekCount, jab, travel, mi
   if (jab) return "Jab day and the big session. Protein first, water in, then earn it. Saturday's the longest workout of the week.";
   if (!trained && missedYesterday && hour < 12) return "Yesterday's gone. The rule is never miss two. Get today done.";
   if (goal && dow === 5 && !weighedToday && hour < 9) return "Friday weigh-in. Straight after the toilet, before food. The weekly trend is the truth.";
-  const tHour = Number((trainTime || "06:00").split(":")[0]);
-  if (hour <= tHour && !trained && !restDay) return `${trainTime}, ${name}. ${plan.title} is loaded. Every session is a step to ${target}.`;
+  const tHour = trainTime ? Number(trainTime.split(":")[0]) : 9;
+  if (hour <= tHour && !trained && !restDay) return trainTime
+    ? `${trainTime}, ${name}. ${plan.title} is loaded. Every session is a step to ${target}.`
+    : `${plan.title} today, ${name}. Whenever it suits. Every session is a step to ${target}.`;
   if (done >= total - 1) return `Nearly a perfect day. Finish it off. This is how ${target} happens.`;
   if (trained && done < total / 2) return "Session's done. Don't leave the rest on the table: protein, water, and get up from that desk.";
   if (weekCount >= 4) return `${weekCount} sessions this week. That's the guy who gets to ${target}.`;
-  if (hour >= 17) return `Stretch tonight, then sleep. Tomorrow's ${trainTime} starts right now.`;
+  if (hour >= 17) return trainTime
+    ? `Stretch tonight, then sleep. Tomorrow's ${trainTime} starts right now.`
+    : "Stretch tonight, then sleep. Tomorrow starts right now.";
   const pool = [
     goal ? `${toGo} kg to go. Chip away. Today's payoff: ${gain}.` : `Today's payoff: ${gain}. Chip away.`,
     "Training is the signal, protein is the material. Miss the 130 g and the muscle pays for it.",
@@ -1698,13 +1702,14 @@ function Setup({ onDone }) {
   const [mins, setMins] = useState(45);
   const [cardio, setCardio] = useState("own");
   const [stretch, setStretch] = useState("combined");
+  const [trainTime, setTrainTime] = useState("");
   const [trackWeight, setTrackWeight] = useState(true);
   const [startKg, setStartKg] = useState("");
   const [goalKg, setGoalKg] = useState("");
 
   const toggleDay = (d) => setDays(days.includes(d) ? days.filter((x) => x !== d) : [...days, d]);
   const finish = () => {
-    const plan = { liftDays: days.length ? days : [1, 3, 5], mins, cardio, stretch, walk: true, trackWeight, equipment: kit };
+    const plan = { liftDays: days.length ? days : [1, 3, 5], mins, cardio, stretch, walk: true, trackWeight, trainTime, equipment: kit };
     const profile = { name: name.trim() || "there", startKg: Number(startKg) || null, goalKg: Number(goalKg) || null };
     onDone({ plan, profile, weighins: trackWeight && Number(startKg) ? [{ date: todayKey(), kg: Number(startKg) }] : [] });
   };
@@ -1748,6 +1753,16 @@ function Setup({ onDone }) {
         </div>
       </div>
       <Choice label="How long have you got?" value={mins} onPick={setMins} options={MINS_CHOICES.map((m) => [m, `${m} min`])} />
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>What time?</div>
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
+          <button onClick={() => setTrainTime("")} aria-pressed={!trainTime}
+            style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: !trainTime ? C.sun : C.panel, color: !trainTime ? C.night : C.paper }}>No set time</button>
+          <button onClick={() => setTrainTime(trainTime || "06:00")} aria-pressed={!!trainTime}
+            style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: trainTime ? C.sun : C.panel, color: trainTime ? C.night : C.paper }}>At a set time</button>
+          {trainTime && <input className="inp" type="time" value={trainTime} onChange={(e) => setTrainTime(e.target.value)} style={{ maxWidth: 130 }} />}
+        </div>
+      </div>
       <Choice label="Cardio" value={cardio} onPick={setCardio} options={[["off", "Leave it out"], ["combined", "In each session"], ["own", "Its own day"]]} />
       <Choice label="Stretching" value={stretch} onPick={setStretch} options={[["off", "Leave it out"], ["combined", "End of each session"], ["own", "Its own day"]]} />
     </div>,
@@ -1848,8 +1863,18 @@ function PlanSheet({ s, setS, onClose }) {
 
       <div style={{ marginTop: 20 }}>
         <div style={{ fontWeight: 600, marginBottom: 8 }}>What time do you train?</div>
-        <input id="trainTime" className="inp" type="time" value={plan.trainTime || "06:00"} onChange={(e) => set({ trainTime: e.target.value })} style={{ maxWidth: 160 }} />
-        <div className="sub" style={{ marginTop: 6 }}>Used for the coaching nudges and the calendar reminders.</div>
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
+          <button onClick={() => set({ trainTime: "" })} aria-pressed={!plan.trainTime}
+            style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: !plan.trainTime ? C.sun : C.panel, color: !plan.trainTime ? C.night : C.paper }}>No set time</button>
+          <button onClick={() => set({ trainTime: plan.trainTime || "06:00" })} aria-pressed={!!plan.trainTime}
+            style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: plan.trainTime ? C.sun : C.panel, color: plan.trainTime ? C.night : C.paper }}>At a set time</button>
+          {plan.trainTime && <input id="trainTime" className="inp" type="time" value={plan.trainTime} onChange={(e) => set({ trainTime: e.target.value })} style={{ maxWidth: 130 }} />}
+        </div>
+        <div className="sub" style={{ marginTop: 8 }}>
+          {plan.trainTime
+            ? "Used for the coaching nudges and the calendar reminders."
+            : "The days are set, the clock isn't. Calendar events become all-day reminders on your training days."}
+        </div>
       </div>
 
       <Row label="Cardio" value={plan.cardio} onPick={(v) => set({ cardio: v })}
@@ -1944,12 +1969,22 @@ const ICS_TZ = [
 const ICSDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
 function icsEvent({ uid, day, start, mins, title, desc, alarm }) {
+  // No set time: an all-day event on that weekday. VALUE=DATE carries no timezone,
+  // so it lands on the right day everywhere.
   const nextOn = (() => {
     let k = todayKey();
     for (let i = 0; i < 8; i++) { if (dowOf(k) === day) return k; k = addDays(k, 1); }
     return todayKey();
   })();
   const stamp = nextOn.replace(/-/g, "");
+  if (!start) {
+    return [
+      "BEGIN:VEVENT", `UID:${uid}@sharpen.local`, `DTSTAMP:${stamp}T000000Z`, "SEQUENCE:1",
+      `DTSTART;VALUE=DATE:${stamp}`, `DTEND;VALUE=DATE:${addDays(nextOn, 1).replace(/-/g, "")}`,
+      `RRULE:FREQ=WEEKLY;BYDAY=${ICSDAY[day]}`, `SUMMARY:${title}`,
+      `DESCRIPTION:${(desc || "").replace(/\n/g, "\\n")}`, "END:VEVENT",
+    ];
+  }
   const [hh, mm] = start.split(":").map(Number);
   const endM = hh * 60 + mm + mins;
   const pad = (n) => String(n).padStart(2, "0");
@@ -1959,6 +1994,7 @@ function icsEvent({ uid, day, start, mins, title, desc, alarm }) {
     "BEGIN:VEVENT",
     `UID:${uid}@sharpen.local`,
     `DTSTAMP:${stamp}T000000Z`,
+    "SEQUENCE:1",
     `DTSTART;TZID=Pacific/Auckland:${stamp}T${s}`,
     `DTEND;TZID=Pacific/Auckland:${stamp}T${e}`,
     `RRULE:FREQ=WEEKLY;BYDAY=${ICSDAY[day]}`,
@@ -1981,10 +2017,10 @@ function buildIcs({ training, desk, stretch }, plan) {
         ...icsEvent({
           uid: `sharpen-train-${d}`,
           day: d,
-          start: isLift ? plan.trainTime : "07:00",
+          start: isLift ? (plan.trainTime || "") : (plan.trainTime ? "07:00" : ""),
           mins: isLift ? plan.mins : 45,
           title: `Sharpen: ${day.title}`,
-          desc: `${day.sub}\n\n5 min warm-up, then the movement block, then the session.`,
+          desc: day.sub + (needsWarmup(day.items) ? "\n\n5 min warm-up, then the movement block, then the session." : ""),
           alarm: true,
         })
       );
@@ -2225,7 +2261,7 @@ function Coach({ s, setS, today, openPlan }) {
 
       <Section title="Reminders on your phone" sub="The app can't buzz your phone on its own. This makes a calendar file instead — import it once and your phone's calendar does the reminding, forever.">
         <div style={{ marginTop: 12 }}>
-          {[["training", "Training sessions", `Your training days at ${({ ...DEFAULT_PLAN, ...(s.plan || {}) }).trainTime}`], ["desk", "Desk resets", "Weekdays 9:30, 11:30 and 2:30"], ["stretch", "Evening stretch", "Every day at 7:45pm"]].map(([k, t, d]) => (
+          {[["training", "Training sessions", (({ ...DEFAULT_PLAN, ...(s.plan || {}) }).trainTime ? `Your training days at ${({ ...DEFAULT_PLAN, ...(s.plan || {}) }).trainTime}` : "All-day reminders on your training days")], ["desk", "Desk resets", "Weekdays 9:30, 11:30 and 2:30"], ["stretch", "Evening stretch", "Every day at 7:45pm"]].map(([k, t, d]) => (
             <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
               <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>{t}</div><div className="sub">{d}</div></div>
               <Toggle on={ics[k]} onClick={() => setIcs({ ...ics, [k]: !ics[k] })} label={t} />
