@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceL
 import {
   Sunrise, Dumbbell, TrendingUp, BookOpen, MessageCircle, Check, Plus, Minus, ChevronLeft,
   ChevronRight, X, CalendarDays, Droplets, Footprints, Armchair, Moon, Send, Timer, Heart, Egg, Syringe, Copy,
-  Download, Upload
+  Download, Upload, Shuffle
 } from "lucide-react";
 
 /* ---------- palette & helpers ---------- */
@@ -160,6 +160,146 @@ const POSES = {
     b: { h: [70, 26], s: [64, 34], p: [49, 58], k: [62, 74], a: [62, 93], k2: [41, 74], a2: [30, 93], f2: [36, 94], e: [74, 36], w: [84, 30] }, props: ["wall"],
   },
   pelvic: { a: { ...CHAIR, e: [50, 48], w: [58, 58] }, b: { ...CHAIR, e: [50, 48], w: [58, 58] }, imp: "pulse", props: ["chair"] },
+  /* ---- new poses for the wider equipment range ---- */
+  pullup: {
+    front: true,
+    a: { h: [50, 30], s: [50, 41], p: [50, 68], k: [48, 84], a: [46, 96], k2: [52, 84], a2: [54, 96], e: [40, 25], w: [38, 10], e2: [60, 25], w2: [62, 10] },
+    b: { h: [50, 16], s: [50, 27], p: [50, 54], k: [46, 70], a: [42, 82], k2: [54, 70], a2: [58, 82], e: [38, 18], w: [38, 10], e2: [62, 18], w2: [62, 10] },
+    imp: "bar-fixed", anchor: [38, 10], anchor2: [62, 10], props: ["highbar"],
+  },
+  dip: {
+    a: { h: [52, 22], s: [50, 33], p: [50, 60], k: [58, 76], a: [66, 66], f: [72, 64], e: [40, 46], w: [38, 62] },
+    b: { h: [52, 40], s: [50, 51], p: [50, 76], k: [60, 88], a: [70, 80], f: [76, 78], e: [38, 60], w: [38, 62] },
+    props: ["dipbars"],
+  },
+  latpulldown: {
+    a: { h: [46, 30], s: [46, 41], p: [48, 66], k: [64, 66], a: [66, 92], e: [43, 20], w: [42, 6] },
+    b: { h: [46, 30], s: [46, 41], p: [48, 66], k: [64, 66], a: [66, 92], e: [37, 44], w: [44, 34] },
+    imp: "bar", anchor: [42, 2], props: ["seat", "cablehigh"],
+  },
+  cablerow: {
+    a: { h: [42, 34], s: [42, 45], p: [40, 70], k: [62, 72], a: [78, 76], f: [84, 72], e: [56, 56], w: [70, 62] },
+    b: { h: [36, 32], s: [38, 43], p: [40, 70], k: [62, 72], a: [78, 76], f: [84, 72], e: [34, 50], w: [46, 58] },
+    imp: "cable", anchor: [94, 66], props: ["rowseat"],
+  },
+  legpress: {
+    a: { h: [16, 68], s: [26, 70], p: [50, 74], k: [66, 54], a: [78, 62], f: [83, 58], e: [30, 82], w: [44, 84] },
+    b: { h: [16, 68], s: [26, 70], p: [50, 74], k: [58, 44], a: [62, 60], f: [67, 56], e: [30, 82], w: [44, 84] },
+    props: ["legpress"],
+  },
+  hacksquat: {
+    a: { h: [40, 24], s: [42, 35], p: [46, 60], k: [62, 64], a: [60, 92], e: [34, 44], w: [30, 56] },
+    b: { h: [34, 44], s: [36, 55], p: [40, 76], k: [60, 74], a: [60, 92], e: [28, 64], w: [24, 76] },
+    props: ["hackrails"],
+  },
+  deadlift: {
+    a: { h: [70, 50], s: [62, 54], p: [38, 62], k: [50, 78], a: [56, 93], e: [60, 70], w: [58, 86] },
+    b: { ...ST, e: [51, 41], w: [52, 54] },
+    imp: "bar",
+  },
+  bulgarian: {
+    a: { h: [46, 20], s: [46, 31], p: [46, 58], k: [42, 76], a: [40, 93], k2: [60, 66], a2: [74, 74], f2: [79, 70], e: [46, 44], w: [46, 56] },
+    b: { h: [46, 36], s: [46, 47], p: [46, 72], k: [38, 82], a: [40, 93], k2: [64, 80], a2: [76, 74], f2: [81, 70], e: [46, 60], w: [46, 72] },
+    imp: "db", props: ["benchlow"],
+  },
+  shrug: { a: { ...ST, e: [51, 41], w: [52, 55] }, b: { ...ST, s: [50, 23], e: [51, 37], w: [52, 51] }, imp: "db" },
+  pullover: {
+    a: { ...BENCHB, e: [30, 48], w: [22, 38] },
+    b: { ...BENCHB, e: [34, 44], w: [44, 36] }, imp: "db", props: ["bench"],
+  },
+  pushdown: { a: { ...ST, e: [53, 38], w: [55, 26] }, b: { ...ST, e: [53, 38], w: [56, 52] }, imp: "cable", anchor: [55, 2], props: ["cablehigh"] },
+  cablefly: {
+    front: true,
+    a: { ...FR, e: [30, 36], w: [16, 32], e2: [70, 36], w2: [84, 32] },
+    b: { ...FR, e: [42, 42], w: [50, 44], e2: [58, 42], w2: [50, 44] },
+    imp: "twocable",
+  },
+  pikepush: {
+    a: { h: [76, 60], s: [68, 54], m: [54, 62], p: [40, 70], k: [30, 82], a: [18, 92], f: [15, 94], e: [76, 72], w: [78, 92] },
+    b: { h: [86, 76], s: [72, 62], m: [56, 66], p: [40, 70], k: [30, 82], a: [18, 92], f: [15, 94], e: [80, 80], w: [78, 92] },
+  },
+  invrow: {
+    a: { h: [22, 72], s: [32, 72], p: [58, 72], k: [74, 72], a: [90, 72], f: [92, 66], e: [30, 56], w: [28, 42] },
+    b: { h: [22, 58], s: [32, 60], p: [58, 66], k: [74, 70], a: [90, 72], f: [92, 66], e: [34, 50], w: [28, 42] },
+    imp: "bar-fixed", anchor: [28, 42], props: ["lowbar"],
+  },
+  nordic: {
+    a: { h: [40, 34], s: [42, 45], p: [46, 70], k: [50, 88], a: [70, 90], f: [76, 88], e: [40, 56], w: [36, 68] },
+    b: { h: [22, 56], s: [28, 62], p: [44, 76], k: [50, 88], a: [70, 90], f: [76, 88], e: [22, 70], w: [18, 82] },
+  },
+  slrdl: {
+    a: { ...ST, k2: [52, 73], a2: [54, 93], e: [50, 41], w: [50, 54] },
+    b: { h: [26, 44], s: [34, 47], p: [56, 56], k: [56, 74], a: [58, 93], k2: [70, 50], a2: [86, 48], f2: [91, 44], e: [32, 60], w: [30, 74] },
+    imp: "db",
+  },
+  sideplank: {
+    front: true,
+    a: { h: [22, 62], s: [30, 66], m: [48, 72], p: [64, 76], k: [78, 84], a: [90, 90], f: [93, 88], e: [30, 80], w: [26, 92], e2: [30, 54], w2: [28, 40] },
+    b: { h: [20, 58], s: [29, 63], m: [48, 70], p: [64, 74], k: [78, 83], a: [90, 90], f: [93, 88], e: [29, 78], w: [26, 92], e2: [29, 50], w2: [27, 36] },
+  },
+  russian: {
+    a: { h: [34, 52], s: [38, 62], p: [50, 84], k: [66, 70], a: [78, 88], f: [83, 85], e: [46, 66], w: [54, 62] },
+    b: { h: [34, 52], s: [38, 62], p: [50, 84], k: [66, 70], a: [78, 88], f: [83, 85], e: [40, 70], w: [34, 74] },
+    imp: "ball",
+  },
+  birddog: {
+    a: { ...QUAD },
+    b: { h: [80, 66], s: [72, 64], m: [57, 64], p: [42, 66], k: [44, 90], a: [24, 92], f: [21, 94], k2: [56, 60], a2: [78, 52], f2: [83, 50], e: [74, 52], w: [86, 42] },
+  },
+  kneeraise: {
+    front: true,
+    a: { h: [50, 30], s: [50, 41], p: [50, 68], k: [48, 84], a: [46, 96], k2: [52, 84], a2: [54, 96], e: [40, 25], w: [38, 10], e2: [60, 25], w2: [62, 10] },
+    b: { h: [50, 30], s: [50, 41], p: [50, 68], k: [44, 66], a: [36, 78], k2: [56, 66], a2: [64, 78], e: [40, 25], w: [38, 10], e2: [60, 25], w2: [62, 10] },
+    imp: "bar-fixed", anchor: [38, 10], anchor2: [62, 10], props: ["highbar"],
+  },
+  treadmill: {
+    a: { ...ST, k: [58, 70], a: [64, 86], k2: [44, 70], a2: [38, 86], e: [56, 40], w: [62, 50], e2: [44, 40], w2: [38, 50] },
+    b: { ...ST, k: [44, 70], a: [38, 86], k2: [58, 70], a2: [64, 86], e: [44, 40], w: [38, 50], e2: [56, 40], w2: [62, 50] },
+    props: ["treadmill"],
+  },
+  elliptical: {
+    a: { ...ST, k: [58, 68], a: [64, 84], k2: [44, 72], a2: [40, 88], e: [58, 40], w: [66, 44], e2: [44, 40], w2: [38, 46] },
+    b: { ...ST, k: [44, 72], a: [40, 88], k2: [58, 68], a2: [64, 84], e: [44, 40], w: [38, 46], e2: [58, 40], w2: [66, 44] },
+    props: ["elliptical"],
+  },
+  sled: {
+    a: { h: [58, 30], s: [54, 40], p: [42, 58], k: [50, 76], a: [40, 92], k2: [56, 74], a2: [66, 90], e: [62, 44], w: [74, 46] },
+    b: { h: [62, 32], s: [58, 42], p: [44, 60], k: [46, 78], a: [30, 92], k2: [58, 76], a2: [70, 90], e: [66, 46], w: [78, 48] },
+    props: ["sled"],
+  },
+  ropes: {
+    front: true,
+    a: { ...FR, k: [42, 72], a: [40, 93], k2: [58, 72], a2: [60, 93], e: [38, 42], w: [32, 32], e2: [62, 42], w2: [68, 52] },
+    b: { ...FR, k: [42, 72], a: [40, 93], k2: [58, 72], a2: [60, 93], e: [38, 42], w: [32, 52], e2: [62, 42], w2: [68, 32] },
+    imp: "ropes",
+  },
+  slam: {
+    front: true,
+    a: { ...FR, e: [42, 12], w: [46, 0], e2: [58, 12], w2: [54, 0] },
+    b: { h: [50, 30], s: [50, 41], p: [50, 64], k: [44, 78], a: [42, 93], k2: [56, 78], a2: [58, 93], e: [44, 52], w: [48, 66], e2: [56, 52], w2: [52, 66] },
+    imp: "ball",
+  },
+  preacher: {
+    a: { h: [44, 26], s: [44, 37], p: [46, 64], k: [62, 66], a: [62, 92], e: [34, 52], w: [24, 62] },
+    b: { h: [44, 26], s: [44, 37], p: [46, 64], k: [62, 66], a: [62, 92], e: [34, 52], w: [30, 38] },
+    imp: "ez", props: ["preacher"],
+  },
+  machpress: {
+    a: { ...CHAIR, e: [34, 44], w: [26, 46] },
+    b: { ...CHAIR, e: [40, 44], w: [56, 46] },
+    imp: "handles", props: ["machine"],
+  },
+  abduction: {
+    front: true,
+    a: { ...FR, k: [44, 74], a: [43, 93], k2: [56, 74], a2: [57, 93] },
+    b: { ...FR, k: [38, 74], a: [32, 93], k2: [62, 74], a2: [68, 93] },
+    props: ["abmachine"],
+  },
+  wallsit: {
+    a: { h: [74, 34], s: [72, 45], p: [70, 70], k: [44, 70], a: [44, 93], e: [66, 58], w: [52, 62] },
+    b: { h: [74, 36], s: [72, 47], p: [70, 72], k: [44, 72], a: [44, 93], e: [66, 60], w: [52, 64] },
+    props: ["wall"],
+  },
 };
 
 const pts = (a) => a.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
@@ -214,6 +354,20 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
       {props.includes("bike") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="34" y1="46" x2="46" y2="46" /><line x1="40" y1="47" x2="52" y2="78" /><line x1="52" y1="78" x2="71" y2="44" /><line x1="68" y1="42" x2="77" y2="39" /><circle cx="52" cy="78" r="9" /><line x1="44" y1="93" x2="64" y2="93" /></g>}
       {props.includes("rower") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="8" y1="88" x2="90" y2="88" /><line x1="28" y1="84" x2="42" y2="84" strokeWidth="5" /><circle cx="84" cy="68" r="9" /><line x1="66" y1="87" x2="70" y2="75" /></g>}
       {props.includes("wall") && <rect x="86" y="6" width="5" height="88" fill={C.line} />}
+      {props.includes("highbar") && <line x1="18" y1="8" x2="82" y2="8" stroke={C.line} strokeWidth="4" strokeLinecap="round" />}
+      {props.includes("lowbar") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round"><line x1="10" y1="40" x2="46" y2="40" /><line x1="14" y1="40" x2="14" y2="93" /><line x1="42" y1="40" x2="42" y2="93" /></g>}
+      {props.includes("dipbars") && <g stroke={C.line} strokeWidth="4" strokeLinecap="round"><line x1="26" y1="62" x2="56" y2="62" /><line x1="30" y1="62" x2="30" y2="93" /><line x1="52" y1="62" x2="52" y2="93" /></g>}
+      {props.includes("cablehigh") && <g stroke={C.line} strokeWidth="3" fill="none"><rect x="60" y="2" width="26" height="92" rx="3" /><line x1="73" y1="2" x2="73" y2="20" /></g>}
+      {props.includes("rowseat") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round"><line x1="30" y1="86" x2="86" y2="86" /><line x1="88" y1="40" x2="88" y2="90" strokeWidth="5" /></g>}
+      {props.includes("legpress") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round" fill="none"><line x1="8" y1="76" x2="46" y2="76" /><line x1="62" y1="34" x2="92" y2="56" strokeWidth="5" /></g>}
+      {props.includes("hackrails") && <line x1="20" y1="10" x2="60" y2="88" stroke={C.line} strokeWidth="4" strokeLinecap="round" />}
+      {props.includes("benchlow") && <g fill={C.line}><rect x="66" y="72" width="28" height="5" rx="2" /><rect x="70" y="77" width="3" height="17" /><rect x="88" y="77" width="3" height="17" /></g>}
+      {props.includes("treadmill") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round" fill="none"><rect x="22" y="88" width="60" height="6" rx="3" /><line x1="78" y1="88" x2="84" y2="44" /><line x1="72" y1="44" x2="90" y2="44" /></g>}
+      {props.includes("elliptical") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round" fill="none"><ellipse cx="52" cy="88" rx="26" ry="5" /><line x1="76" y1="86" x2="80" y2="40" /><line x1="70" y1="40" x2="88" y2="40" /></g>}
+      {props.includes("sled") && <g stroke={C.line} strokeWidth="4" strokeLinecap="round" fill="none"><line x1="76" y1="93" x2="94" y2="93" /><line x1="80" y1="93" x2="80" y2="46" /><line x1="92" y1="93" x2="92" y2="46" /><line x1="78" y1="48" x2="94" y2="48" /></g>}
+      {props.includes("preacher") && <line x1="22" y1="70" x2="40" y2="50" stroke={C.line} strokeWidth="6" strokeLinecap="round" />}
+      {props.includes("machine") && <g stroke={C.line} strokeWidth="3" fill="none"><rect x="8" y="26" width="18" height="68" rx="3" /></g>}
+      {props.includes("abmachine") && <g fill={C.line}><rect x="26" y="60" width="5" height="34" rx="2" /><rect x="69" y="60" width="5" height="34" rx="2" /></g>}
       {props.includes("roller") && <circle cx="31" cy="89" r="5" fill={C.line} />}
       {I === "band" && <Poly A={[P.anchor, A.w]} B={[P.anchor, B.w]} on={on} stroke={C.sage} strokeWidth="1.6" strokeDasharray="3 2" />}
       {I === "landmine" && <Poly A={[[6, 93], A.w]} B={[[6, 93], B.w]} on={on} stroke={C.mist} strokeWidth="3" />}
@@ -234,6 +388,14 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
       {I === "db" && <Poly A={[off(A.w, -4), off(A.w, 4)]} B={[off(B.w, -4), off(B.w, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
       {I === "db" && front && <Poly A={[off(A.w2, -4), off(A.w2, 4)]} B={[off(B.w2, -4), off(B.w2, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
       {I === "wheel" && <Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} />}
+      {I === "bar-fixed" && <line x1={(P.anchor || [30, 10])[0] - 9} y1={(P.anchor || [30, 10])[1]} x2={((P.anchor2 || P.anchor) || [70, 10])[0] + 9} y2={(P.anchor || [30, 10])[1]} stroke={C.sun} strokeWidth="4" strokeLinecap="round" />}
+      {I === "cable" && <Poly A={[P.anchor, A.w]} B={[P.anchor, B.w]} on={on} stroke={C.mist} strokeWidth="1.6" />}
+      {I === "cable" && <Poly A={[off(A.w, -4, 0), off(A.w, 4, 0)]} B={[off(B.w, -4, 0), off(B.w, 4, 0)]} on={on} stroke={C.sun} strokeWidth="4.5" />}
+      {I === "twocable" && <><Poly A={[[4, 20], A.w]} B={[[4, 20], B.w]} on={on} stroke={C.mist} strokeWidth="1.6" /><Poly A={[[96, 20], A.w2]} B={[[96, 20], B.w2]} on={on} stroke={C.mist} strokeWidth="1.6" /><Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} /><Dot A={A.w2} B={B.w2} on={on} r={4} fill={C.sun} /></>}
+      {I === "ball" && <Dot A={A.w} B={B.w} on={on} r={6} fill={C.sun} />}
+      {I === "ropes" && <><Poly A={[A.w, [6, 60], [2, 93]]} B={[B.w, [6, 66], [2, 93]]} on={on} stroke={C.sun} strokeWidth="2.4" /><Poly A={[A.w2, [94, 66], [98, 93]]} B={[B.w2, [94, 60], [98, 93]]} on={on} stroke={C.sun} strokeWidth="2.4" /></>}
+      {I === "handles" && <><Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} /><Dot A={off(A.w, 0, 10)} B={off(B.w, 0, 10)} on={on} r={4} fill={C.sun} /></>}
+      {I === "ez" && <Poly A={[off(A.w, -5, 1), off(A.w, -1, -2), off(A.w, 3, 1), off(A.w, 7, -2)]} B={[off(B.w, -5, 1), off(B.w, -1, -2), off(B.w, 3, 1), off(B.w, 7, -2)]} on={on} stroke={C.sun} strokeWidth="3.4" />}
       {I === "kb" && <Dot A={off(A.w, 0, 5)} B={off(B.w, 0, 5)} on={on} r={5.2} fill={C.sun} />}
       {I === "pulse" && (
         <circle cx={A.p[0] + 4} cy={A.p[1] - 2} r="4" fill="none" stroke={C.sun} strokeWidth="2">
@@ -245,8 +407,37 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
   );
 }
 
-/* ---------- exercise library ---------- */
+/* ---------- equipment ---------- */
+// What someone can tick at setup. Bodyweight is always assumed.
+const EQUIP = [
+  ["Free weights", [["db", "Dumbbells"], ["bb", "Barbell & plates"], ["ez", "EZ curl bar"], ["kb", "Kettlebells"]]],
+  ["Benches & racks", [["bench", "Flat bench"], ["benchadj", "Adjustable bench"], ["rack", "Power rack or squat stand"], ["preacher", "Preacher pad"], ["legcurlext", "Leg curl / extension"]]],
+  ["Bars & rigs", [["pullup", "Pull-up bar"], ["dipbar", "Dip bars"], ["smith", "Smith machine"], ["landmine", "Landmine"]]],
+  ["Cables & machines", [["cable", "Cable machine"], ["latpull", "Lat pulldown"], ["legpress", "Leg press"], ["hack", "Hack squat"], ["pecdeck", "Pec deck / fly machine"], ["machine", "Chest / shoulder press machine"], ["abmachine", "Hip abduction machine"]]],
+  ["Cardio", [["bike", "Exercise bike"], ["rowerm", "Rowing machine"], ["treadmill", "Treadmill"], ["elliptical", "Elliptical"]]],
+  ["Other kit", [["bands", "Resistance bands"], ["trx", "Suspension trainer"], ["ball", "Medicine ball"], ["box", "Plyo box or step"], ["abwheel", "Ab roller"], ["roller", "Foam roller"], ["sled", "Sled"], ["ropesk", "Battle ropes"]]],
+];
+const ALL_EQUIP = EQUIP.flatMap(([, items]) => items.map(([id]) => id));
+const EQUIP_LABEL = Object.fromEntries(EQUIP.flatMap(([, items]) => items));
+// Ben's garage, used to migrate his existing install so nothing changes for him.
+const BEN_EQUIP = ["db", "bb", "ez", "kb", "bench", "benchadj", "rack", "preacher", "legcurlext", "landmine", "bands", "box", "abwheel", "roller", "bike", "rowerm"];
+
+/* ---------- movement patterns ---------- */
+const PAT = {
+  squat: "Squat", hinge: "Hinge", lunge: "Single leg", hpush: "Horizontal push", vpush: "Vertical push",
+  hpull: "Horizontal pull", vpull: "Vertical pull", quad: "Quads", ham: "Hamstrings", glute: "Glutes",
+  calf: "Calves", bi: "Biceps", tri: "Triceps", delt: "Shoulders", core: "Core", carry: "Carry",
+};
+
+/* ---------- exercise library ----------
+   Every strength move carries:
+     pat  - the movement pattern it fills
+     eq   - equipment needed (ALL of it), [] means bodyweight
+     rank - preference when several options are available (higher wins)
+   Exercise ids are permanent: logged sets reference them. Never rename one. */
+const Ex = (name, pose, pat, eq, rank, o = {}) => ({ name, pose, pat, eq, rank, g: "strength", ...o });
 const EX = {
+  /* --- warm-up: the movement block --- */
   bike: { name: "Easy bike", pose: "bike", g: "warm", cues: ["Easy spin, you could hold a chat", "Let the heart rate creep up, no rush"] },
   hops: { name: "Lymphatic hopping", pose: "hop", g: "warm", cues: ["Small, soft bounces on the balls of the feet", "Loose shoulders, easy breathing"] },
   waves: { name: "Body waves", pose: "wave", g: "warm", cues: ["Roll through chest, belly, then hips", "Slow and smooth"] },
@@ -256,44 +447,147 @@ const EX = {
   golf: { name: "Golf swings", pose: "twist", g: "warm", cues: ["Slow practice swings both ways", "Rotate through the hips"] },
   march: { name: "Marches", pose: "march", g: "warm", cues: ["Knee to hip height", "Opposite arm drives"] },
 
-  squat: { name: "Back squat", pose: "squat", g: "strength", inc: 2.5, cues: ["Brace like you're about to be poked in the belly", "Sit down between your heels, chest proud", "Drive up through the whole foot"] },
-  goblet: { name: "Goblet squat", pose: "goblet", g: "strength", inc: 2, cues: ["Hold the bell at your chest", "Elbows inside the knees at the bottom"] },
-  lunge: { name: "DB reverse lunge", pose: "lunge", g: "strength", inc: 2.5, cues: ["Step back long, drop the back knee toward the floor", "Push through the front heel to stand"] },
-  legext: { name: "Leg extension", pose: "legext", g: "strength", inc: 2.5, cues: ["Pause a second at the top", "Three seconds down"] },
-  legcurl: { name: "Leg curl", pose: "legcurl", g: "strength", inc: 2.5, cues: ["Hips pinned to the pad", "Curl the heels up, lower slow"] },
-  calf: { name: "Calf raise", pose: "calf", g: "strength", inc: 2.5, cues: ["Full stretch at the bottom", "Pause high on the toes"] },
-  deadbug: { name: "Dead bug", pose: "deadbug", g: "strength", cues: ["Lower back glued to the floor", "Reach opposite arm and leg away, breathe out"] },
-  plank: { name: "Plank", pose: "plank", g: "strength", cues: ["Squeeze glutes, ribs down", "Straight line, breathe"] },
-  bench: { name: "Bench press", pose: "bench", g: "strength", inc: 2.5, cues: ["Shoulder blades pinned back", "Bar to lower chest, forearms vertical", "Feet planted, press up and slightly back"] },
-  ohp: { name: "Overhead press", pose: "ohp", g: "strength", inc: 2.5, cues: ["Squeeze glutes, ribs down", "Press straight up, head through at the top"] },
-  incline: { name: "Incline DB press", pose: "incline", g: "strength", inc: 2.5, cues: ["Bench at about 30°", "Lower to upper chest, elbows 45° from the body"] },
-  dbpress: { name: "Seated DB shoulder press", pose: "dbpress", g: "strength", inc: 2.5, cues: ["Back supported", "Press up, bring the bells in slightly at the top"] },
-  lateral: { name: "Lateral raise", pose: "lateral", g: "strength", inc: 1, cues: ["Lead with the elbows", "Stop at shoulder height, lower slow"] },
-  pushup: { name: "Push-up (board)", pose: "pushup", g: "strength", cues: ["Body in one straight line", "Chest to the board, elbows back at 45°"] },
-  ohtri: { name: "Overhead triceps extension", pose: "ohtri", g: "strength", inc: 2.5, cues: ["Elbows point at the ceiling", "Lower behind the head, then extend"] },
-  rdl: { name: "Barbell RDL", pose: "rdl", g: "strength", inc: 2.5, cues: ["Soft knees, push hips back to the wall behind you", "Bar slides down the thighs, back flat", "Stand up by squeezing glutes"] },
-  bridge: { name: "Glute bridge", pose: "bridge", g: "strength", inc: 5, cues: ["Chin tucked, ribs down", "Drive through the heels, squeeze hard at the top"] },
-  swing: { name: "Kettlebell swing", pose: "swing", g: "strength", inc: 4, cues: ["A hip snap, not a squat or an arm lift", "Bell floats to chest height"] },
-  stepup: { name: "Box step-up", pose: "stepup", g: "strength", inc: 2.5, cues: ["Whole foot on the box", "Drive through the top leg, don't push off the bottom one"] },
-  carry: { name: "Farmer carry", pose: "carry", g: "strength", inc: 2.5, cues: ["Tall posture, shoulders down", "Short quick steps, breathe"] },
-  row: { name: "Bent-over row", pose: "row", g: "strength", inc: 2.5, cues: ["Hinge to about 45°, back flat", "Pull to the belly button, elbows back"] },
-  pulldown: { name: "Band pulldown", pose: "pulldown", g: "strength", cues: ["Band anchored high on the rack", "Elbows down to the ribs, chest up"] },
-  dbrow: { name: "One-arm DB row", pose: "row", imp: "db", g: "strength", inc: 2.5, cues: ["Hand and knee on the bench", "Pull the dumbbell to your hip"] },
-  facepull: { name: "Band face pull", pose: "facepull", g: "strength", cues: ["Pull the band to your forehead", "Elbows high, squeeze between the shoulder blades"] },
-  curl: { name: "EZ bar curl", pose: "curl", g: "strength", inc: 2.5, cues: ["Elbows pinned at your sides", "No swinging, lower slow"] },
-  landmine: { name: "Landmine press", pose: "landmine", g: "strength", inc: 2.5, cues: ["Staggered stance", "Press up and forward, reach through"] },
+  /* --- squat --- */
+  squat: Ex("Back squat", "squat", "squat", ["bb", "rack"], 90, { inc: 2.5, imp: "bar", cues: ["Brace like you're about to be poked in the belly", "Sit down between your heels, chest proud", "Drive up through the whole foot"] }),
+  frontsquat: Ex("Front squat", "squat", "squat", ["bb", "rack"], 78, { inc: 2.5, imp: "bar", cues: ["Bar on the front delts, elbows high", "Stay upright, knees track over the toes"] }),
+  smithsquat: Ex("Smith machine squat", "hacksquat", "squat", ["smith"], 70, { inc: 2.5, cues: ["Feet slightly forward of the bar", "Control the descent, the rails do the balancing"] }),
+  hacksq: Ex("Hack squat", "hacksquat", "squat", ["hack"], 68, { inc: 5, cues: ["Back flat on the pad", "Knees track over the toes, full depth"] }),
+  goblet: Ex("Goblet squat", "goblet", "squat", ["kb"], 66, { inc: 2, imp: "kb", cues: ["Hold the bell at your chest", "Elbows inside the knees at the bottom"] }),
+  dbsquat: Ex("Dumbbell squat", "goblet", "squat", ["db"], 60, { inc: 2.5, imp: "db", cues: ["Bells at the shoulders or hanging at your sides", "Chest tall, sit between the heels"] }),
+  bwsquat: Ex("Bodyweight squat", "squat", "squat", [], 30, { imp: null, bw: true, cues: ["Arms out in front for balance", "Slow down, drive up"] }),
 
-  dbrdl: { name: "DB Romanian deadlift", pose: "rdl", imp: "db", g: "strength", inc: 2.5, cues: ["Soft knees, push hips back", "Feel the hamstrings stretch, back flat"] },
-  skull: { name: "EZ bar skullcrusher", pose: "skull", g: "strength", inc: 2.5, cues: ["Lower to the forehead, elbows tucked", "Only the forearms move"] },
-  dbbench: { name: "DB bench press", pose: "bench", imp: "db", g: "strength", inc: 2.5, cues: ["Shoulder blades back and down", "Lower until the bells are level with your chest"] },
-  lmrow: { name: "Landmine row", pose: "row", imp: "landmine", g: "strength", inc: 2.5, cues: ["Hinge to about 45°, back flat", "Pull the sleeve to your belly, squeeze the back"] },
-  reardelt: { name: "Chest-supported rear delt fly", pose: "row", imp: "db", g: "strength", inc: 1, cues: ["Chest on the incline bench, face down", "Raise the arms out wide, thumbs slightly down"] },
-  hipthrust: { name: "Barbell hip thrust", pose: "hipthrust", g: "strength", inc: 5, cues: ["Upper back on the bench, bar padded", "Chin tucked, ribs down, squeeze hard at the top"] },
-  abroller: { name: "Ab roller (knees)", pose: "abroller", g: "strength", cues: ["Only roll as far as you can control", "Short range is fine, ribs down"] },
-  zone2: { name: "Zone 2 bike", pose: "bike", g: "cardio", cues: ["Conversational pace: you can talk, not sing", "Roughly 110–125 bpm for you"] },
-  rower: { name: "Air rower", pose: "rower", g: "cardio", cues: ["Legs, then lean, then arms", "Reverse on the way back"] },
-  walk: { name: "Brisk walk", pose: "walk", g: "cardio", cues: ["Breathing a bit harder than normal", "Outside if you can, daylight helps sleep"] },
+  /* --- hinge --- */
+  deadlift: Ex("Deadlift", "deadlift", "hinge", ["bb"], 92, { inc: 5, imp: "bar", cues: ["Bar over mid-foot, shins almost touching", "Chest up, push the floor away", "Lock out with the glutes, don't lean back"] }),
+  rdl: Ex("Barbell RDL", "rdl", "hinge", ["bb"], 88, { inc: 2.5, imp: "bar", cues: ["Soft knees, push hips back to the wall behind you", "Bar slides down the thighs, back flat", "Stand up by squeezing glutes"] }),
+  dbrdl: Ex("DB Romanian deadlift", "rdl", "hinge", ["db"], 72, { inc: 2.5, imp: "db", cues: ["Soft knees, push hips back", "Feel the hamstrings stretch, back flat"] }),
+  kbdead: Ex("Kettlebell deadlift", "deadlift", "hinge", ["kb"], 64, { inc: 4, imp: "kb", cues: ["Bell between the feet", "Push the floor away, stand tall"] }),
+  swing: Ex("Kettlebell swing", "swing", "hinge", ["kb"], 68, { inc: 4, imp: "kb", cues: ["A hip snap, not a squat or an arm lift", "Bell floats to chest height"] }),
+  goodmorning: Ex("Good morning", "rdl", "hinge", ["bb", "rack"], 58, { inc: 2.5, imp: "bar", cues: ["Bar on the back, soft knees", "Hinge until the hamstrings say stop, back flat"] }),
+  slrdl: Ex("Single-leg RDL", "slrdl", "hinge", ["db"], 56, { inc: 2.5, imp: "db", note: "each side", cues: ["Back leg straight behind you, hips level", "Slow and balanced, don't chase depth"] }),
+  bridge: Ex("Glute bridge", "bridge", "hinge", [], 34, { inc: 5, bw: true, cues: ["Chin tucked, ribs down", "Drive through the heels, squeeze hard at the top"] }),
 
+  /* --- single leg --- */
+  bulgarian: Ex("Bulgarian split squat", "bulgarian", "lunge", ["db", "bench"], 80, { inc: 2.5, imp: "db", note: "each leg", cues: ["Back foot on the bench, front foot well forward", "Drop straight down, drive through the front heel"] }),
+  lunge: Ex("DB reverse lunge", "lunge", "lunge", ["db"], 75, { inc: 2.5, imp: "db", note: "each leg", cues: ["Step back long, drop the back knee toward the floor", "Push through the front heel to stand"] }),
+  walklunge: Ex("Walking lunge", "lunge", "lunge", ["db"], 68, { inc: 2.5, imp: "db", note: "each leg", cues: ["Long steps, torso upright", "Knee tracks over the foot"] }),
+  stepup: Ex("Box step-up", "stepup", "lunge", ["box", "db"], 65, { inc: 2.5, imp: "db", note: "each leg", cues: ["Whole foot on the box", "Drive through the top leg, don't push off the bottom one"] }),
+  bwlunge: Ex("Bodyweight lunge", "lunge", "lunge", [], 36, { imp: null, bw: true, note: "each leg", cues: ["Step back, drop the back knee toward the floor", "Push through the front heel"] }),
+
+  /* --- horizontal push --- */
+  bench: Ex("Bench press", "bench", "hpush", ["bb", "bench"], 90, { inc: 2.5, imp: "bar", cues: ["Shoulder blades pinned back", "Bar to lower chest, forearms vertical", "Feet planted, press up and slightly back"] }),
+  inclinebb: Ex("Incline bench press", "incline", "hpush", ["bb", "benchadj"], 80, { inc: 2.5, imp: "bar", cues: ["Bench at about 30°", "Bar to the upper chest"] }),
+  dbbench: Ex("DB bench press", "bench", "hpush", ["db", "bench"], 82, { inc: 2.5, imp: "db", cues: ["Shoulder blades back and down", "Lower until the bells are level with your chest"] }),
+  incline: Ex("Incline DB press", "incline", "hpush", ["db", "benchadj"], 78, { inc: 2.5, imp: "db", cues: ["Bench at about 30°", "Lower to upper chest, elbows 45° from the body"] }),
+  smithbench: Ex("Smith bench press", "bench", "hpush", ["smith", "bench"], 68, { inc: 2.5, imp: "bar", cues: ["Bar to the lower chest", "The rails balance it, so chase the squeeze"] }),
+  dip: Ex("Dip", "dip", "hpush", ["dipbar"], 74, { bw: true, cues: ["Lean forward slightly for the chest", "Lower until the upper arms are parallel, no deeper"] }),
+  machpress: Ex("Chest press machine", "machpress", "hpush", ["machine"], 70, { inc: 5, imp: "handles", cues: ["Seat height so the handles sit at mid-chest", "Press without locking out hard"] }),
+  floorpress: Ex("DB floor press", "bench", "hpush", ["db"], 58, { inc: 2.5, imp: "db", cues: ["Upper arms rest on the floor at the bottom", "Press straight up"] }),
+  pushup: Ex("Push-up", "pushup", "hpush", [], 46, { bw: true, cues: ["Body in one straight line", "Chest to the floor, elbows back at 45°"] }),
+  cablefly: Ex("Cable fly", "cablefly", "hpush", ["cable"], 56, { inc: 2.5, cues: ["Soft elbows, hold the angle", "Squeeze the hands together in front of the chest"] }),
+  pecdeckex: Ex("Pec deck", "cablefly", "hpush", ["pecdeck"], 54, { inc: 5, cues: ["Forearms flat on the pads", "Squeeze, then let it open slowly"] }),
+
+  /* --- vertical push --- */
+  ohp: Ex("Overhead press", "ohp", "vpush", ["bb", "rack"], 88, { inc: 2.5, imp: "bar", cues: ["Squeeze glutes, ribs down", "Press straight up, head through at the top"] }),
+  dbpress: Ex("Seated DB shoulder press", "dbpress", "vpush", ["db", "benchadj"], 82, { inc: 2.5, imp: "db", cues: ["Back supported", "Press up, bring the bells in slightly at the top"] }),
+  arnold: Ex("Standing DB press", "ohp", "vpush", ["db"], 72, { inc: 2.5, imp: "db", cues: ["Start at the shoulders, palms facing you", "Press and rotate, finish palms forward"] }),
+  machshoulder: Ex("Shoulder press machine", "machpress", "vpush", ["machine"], 70, { inc: 5, imp: "handles", cues: ["Back flat on the pad", "Press up without shrugging"] }),
+  smithohp: Ex("Smith overhead press", "ohp", "vpush", ["smith"], 66, { inc: 2.5, imp: "bar", cues: ["Seated or standing, bar at collarbone height", "Press straight up"] }),
+  landmine: Ex("Landmine press", "landmine", "vpush", ["landmine"], 66, { inc: 2.5, cues: ["Staggered stance", "Press up and forward, reach through"] }),
+  pikepush: Ex("Pike push-up", "pikepush", "vpush", [], 40, { bw: true, cues: ["Hips high, body in an upside-down V", "Crown of the head toward the floor"] }),
+
+  /* --- horizontal pull --- */
+  row: Ex("Bent-over row", "row", "hpull", ["bb"], 88, { inc: 2.5, imp: "bar", cues: ["Hinge to about 45°, back flat", "Pull to the belly button, elbows back"] }),
+  cablerow: Ex("Seated cable row", "cablerow", "hpull", ["cable"], 85, { inc: 2.5, cues: ["Chest up, pull to the belly", "Squeeze the shoulder blades, control the return"] }),
+  dbrow: Ex("One-arm DB row", "row", "hpull", ["db", "bench"], 82, { inc: 2.5, imp: "db", note: "each side", cues: ["Hand and knee on the bench", "Pull the dumbbell to your hip"] }),
+  chestrow: Ex("Chest-supported row", "row", "hpull", ["db", "benchadj"], 76, { inc: 2.5, imp: "db", cues: ["Chest on the incline bench, face down", "Pull the bells to your hips"] }),
+  lmrow: Ex("Landmine row", "row", "hpull", ["landmine"], 75, { inc: 2.5, imp: "landmine", cues: ["Hinge to about 45°, back flat", "Pull the sleeve to your belly, squeeze the back"] }),
+  trxrow: Ex("Suspension row", "invrow", "hpull", ["trx"], 62, { bw: true, cues: ["Body straight, heels planted", "Pull the chest to the handles"] }),
+  invrow: Ex("Inverted row", "invrow", "hpull", ["pullup"], 60, { bw: true, cues: ["Bar at hip height, body straight", "Pull the chest to the bar"] }),
+  tablerow: Ex("Table row", "invrow", "hpull", [], 38, { bw: true, cues: ["Lie under a sturdy table or desk and grip the edge", "Body straight, pull the chest up to your hands"] }),
+  bandrow: Ex("Band row", "row", "hpull", ["bands"], 44, { bw: true, cues: ["Band anchored at chest height", "Pull to the ribs, elbows close"] }),
+
+  /* --- vertical pull --- */
+  pullup: Ex("Pull-up", "pullup", "vpull", ["pullup"], 90, { bw: true, cues: ["Hands just outside the shoulders", "Chest to the bar, no swinging", "Lower all the way down"] }),
+  chinup: Ex("Chin-up", "pullup", "vpull", ["pullup"], 84, { bw: true, cues: ["Palms facing you, hands shoulder-width", "Drive the elbows down to the ribs"] }),
+  latpulldown: Ex("Lat pulldown", "latpulldown", "vpull", ["latpull"], 88, { inc: 2.5, cues: ["Chest up, slight lean back", "Pull the bar to the collarbone, elbows down"] }),
+  cablepulldown: Ex("Cable pulldown", "latpulldown", "vpull", ["cable"], 80, { inc: 2.5, cues: ["High pulley, kneel or sit", "Elbows down to the ribs, chest up"] }),
+  strarm: Ex("Straight-arm pulldown", "pushdown", "vpull", ["cable"], 54, { inc: 2.5, cues: ["Arms nearly straight the whole way", "Sweep the bar down to the thighs"] }),
+  trxpull: Ex("Suspension pull", "invrow", "vpull", ["trx"], 50, { bw: true, cues: ["Lean well back, body straight", "Pull high, elbows out"] }),
+  pulldown: Ex("Band pulldown", "pulldown", "vpull", ["bands"], 45, { bw: true, cues: ["Band anchored high on the rack", "Elbows down to the ribs, chest up"] }),
+
+  /* --- quads --- */
+  legpressex: Ex("Leg press", "legpress", "quad", ["legpress"], 76, { inc: 5, cues: ["Feet mid-platform, shoulder width", "Full range, don't lock the knees out hard"] }),
+  legext: Ex("Leg extension", "legext", "quad", ["legcurlext"], 70, { inc: 2.5, cues: ["Pause a second at the top", "Three seconds down"] }),
+  wallsit: Ex("Wall sit", "wallsit", "quad", [], 32, { bw: true, cues: ["Thighs parallel, back flat on the wall", "Hold and breathe"] }),
+  sissy: Ex("Sissy squat", "squat", "quad", [], 34, { imp: null, bw: true, cues: ["Hold something for balance", "Knees travel forward, hips stay open"] }),
+
+  /* --- hamstrings --- */
+  legcurl: Ex("Leg curl", "legcurl", "ham", ["legcurlext"], 76, { inc: 2.5, cues: ["Hips pinned to the pad", "Curl the heels up, lower slow"] }),
+  nordic: Ex("Nordic curl", "nordic", "ham", [], 46, { bw: true, cues: ["Ankles anchored, hips locked straight", "Lower as slowly as you can, catch with the hands"] }),
+
+  /* --- glutes --- */
+  hipthrust: Ex("Barbell hip thrust", "hipthrust", "glute", ["bb", "bench"], 85, { inc: 5, imp: "bar", cues: ["Upper back on the bench, bar padded", "Chin tucked, ribs down, squeeze hard at the top"] }),
+  dbthrust: Ex("DB hip thrust", "hipthrust", "glute", ["db", "bench"], 70, { inc: 2.5, imp: "db", cues: ["Bell across the hips", "Drive through the heels, squeeze at the top"] }),
+  kickback: Ex("Cable kickback", "birddog", "glute", ["cable"], 56, { inc: 2.5, note: "each side", cues: ["Hinge forward slightly, brace the core", "Drive the heel back, squeeze the glute"] }),
+  abduction: Ex("Hip abduction", "abduction", "glute", ["abmachine"], 50, { inc: 5, cues: ["Sit tall, don't lean back", "Push the knees apart, squeeze, return slow"] }),
+
+  /* --- calves --- */
+  calf: Ex("Calf raise", "calf", "calf", ["db"], 70, { inc: 2.5, imp: "db", cues: ["Full stretch at the bottom", "Pause high on the toes"] }),
+  smithcalf: Ex("Smith calf raise", "calf", "calf", ["smith"], 66, { inc: 5, imp: "bar", cues: ["Balls of the feet on a plate or step", "Full stretch, then squeeze the top"] }),
+  presscalf: Ex("Leg press calf raise", "legpress", "calf", ["legpress"], 62, { inc: 5, cues: ["Balls of the feet on the edge of the platform", "Push through the toes, slow on the way back"] }),
+  bwcalf: Ex("Bodyweight calf raise", "calf", "calf", [], 40, { imp: null, bw: true, cues: ["On a step if you have one, for the full stretch", "Pause at the top"] }),
+
+  /* --- biceps --- */
+  preachercurl: Ex("Preacher curl", "preacher", "bi", ["ez", "preacher"], 82, { inc: 2.5, cues: ["Armpits into the top of the pad", "Don't let the elbows lift, lower all the way"] }),
+  curl: Ex("EZ bar curl", "curl", "bi", ["ez"], 80, { inc: 2.5, imp: "bar", cues: ["Elbows pinned at your sides", "No swinging, lower slow"] }),
+  bbcurl: Ex("Barbell curl", "curl", "bi", ["bb"], 76, { inc: 2.5, imp: "bar", cues: ["Elbows pinned, no hip swing", "Lower under control"] }),
+  dbcurl: Ex("DB curl", "curl", "bi", ["db"], 74, { inc: 2, imp: "db", cues: ["Elbows at your sides", "Turn the pinky up at the top"] }),
+  hammer: Ex("Hammer curl", "curl", "bi", ["db"], 72, { inc: 2, imp: "db", cues: ["Palms facing each other the whole way", "No swinging"] }),
+  cablecurl: Ex("Cable curl", "curl", "bi", ["cable"], 70, { inc: 2.5, imp: "cable", cues: ["Constant tension, elbows still", "Squeeze at the top"] }),
+  bandcurl: Ex("Band curl", "curl", "bi", ["bands"], 42, { bw: true, cues: ["Stand on the band, elbows pinned", "Slow on the way down"] }),
+
+  /* --- triceps --- */
+  pushdown: Ex("Cable pushdown", "pushdown", "tri", ["cable"], 82, { inc: 2.5, imp: "cable", cues: ["Elbows glued to your sides", "Straighten fully, control the return"] }),
+  skull: Ex("EZ bar skullcrusher", "skull", "tri", ["ez", "bench"], 78, { inc: 2.5, imp: "bar", cues: ["Lower to the forehead, elbows tucked", "Only the forearms move"] }),
+  closegrip: Ex("Close-grip bench press", "bench", "tri", ["bb", "bench"], 76, { inc: 2.5, imp: "bar", cues: ["Hands shoulder-width, elbows tucked in", "Bar to the lower chest"] }),
+  diptri: Ex("Triceps dip", "dip", "tri", ["dipbar"], 74, { bw: true, cues: ["Stay upright to keep it on the triceps", "Lower to parallel, no deeper"] }),
+  ohtri: Ex("Overhead triceps extension", "ohtri", "tri", ["db"], 72, { inc: 2.5, imp: "db", cues: ["Elbows point at the ceiling", "Lower behind the head, then extend"] }),
+  benchdip: Ex("Bench dip", "dip", "tri", ["bench"], 50, { bw: true, cues: ["Hands on the bench behind you", "Elbows straight back, not flared"] }),
+  diamond: Ex("Diamond push-up", "pushup", "tri", [], 40, { bw: true, cues: ["Hands together under the chest", "Elbows brush the ribs"] }),
+
+  /* --- shoulders (isolation) --- */
+  lateral: Ex("Lateral raise", "lateral", "delt", ["db"], 80, { inc: 1, imp: "db", cues: ["Lead with the elbows", "Stop at shoulder height, lower slow"] }),
+  facepull: Ex("Cable face pull", "facepull", "delt", ["cable"], 78, { inc: 2.5, cues: ["Pull to the forehead, elbows high", "Squeeze between the shoulder blades"] }),
+  cablelateral: Ex("Cable lateral raise", "lateral", "delt", ["cable"], 74, { inc: 2.5, cues: ["Cable at the low setting, one arm at a time", "Lead with the elbow"] }),
+  reardelt: Ex("Chest-supported rear delt fly", "row", "delt", ["db", "benchadj"], 72, { inc: 1, imp: "db", cues: ["Chest on the incline bench, face down", "Raise the arms out wide, thumbs slightly down"] }),
+  upright: Ex("Upright row", "curl", "delt", ["db"], 58, { inc: 2, imp: "db", cues: ["Pull to the lower chest, elbows leading", "Stop if the shoulders pinch"] }),
+  bandface: Ex("Band face pull", "facepull", "delt", ["bands"], 50, { bw: true, cues: ["Pull the band to your forehead", "Elbows high, squeeze between the shoulder blades"] }),
+
+  /* --- core --- */
+  abroller: Ex("Ab roller", "abroller", "core", ["abwheel"], 75, { bw: true, cues: ["Only roll as far as you can control", "Short range is fine, ribs down"] }),
+  kneeraise: Ex("Hanging knee raise", "kneeraise", "core", ["pullup"], 70, { bw: true, cues: ["No swinging, curl the pelvis up", "Lower slowly"] }),
+  cablecrunch: Ex("Cable crunch", "pushdown", "core", ["cable"], 64, { inc: 2.5, cues: ["Kneel below the pulley, rope at the head", "Crunch the ribs toward the hips"] }),
+  plank: Ex("Plank", "plank", "core", [], 60, { bw: true, cues: ["Squeeze glutes, ribs down", "Straight line, breathe"] }),
+  deadbug: Ex("Dead bug", "deadbug", "core", [], 58, { bw: true, note: "each side", cues: ["Lower back glued to the floor", "Reach opposite arm and leg away, breathe out"] }),
+  sideplank: Ex("Side plank", "sideplank", "core", [], 55, { bw: true, note: "each side", cues: ["Hips stacked and lifted", "Straight line from ear to ankle"] }),
+  russian: Ex("Russian twist", "russian", "core", ["ball"], 50, { bw: true, cues: ["Lean back, chest tall", "Turn from the ribs, not the arms"] }),
+  slam: Ex("Medicine ball slam", "slam", "core", ["ball"], 48, { bw: true, cues: ["Reach tall, then slam through the whole body", "Catch the bounce or pick it up, reset"] }),
+  birddog: Ex("Bird dog", "birddog", "core", [], 45, { bw: true, note: "each side", cues: ["Opposite arm and leg, hips level", "Reach long, pause, return slow"] }),
+
+  /* --- carries --- */
+  carry: Ex("Farmer carry", "carry", "carry", ["db"], 80, { inc: 2.5, imp: "db", note: "metres, kg per hand", cues: ["Tall posture, shoulders down", "Short quick steps, breathe"] }),
+  kbcarry: Ex("Kettlebell carry", "carry", "carry", ["kb"], 72, { inc: 4, imp: "kb", note: "metres, kg per hand", cues: ["Ribs down, shoulders packed", "Walk tall"] }),
+  sledpush: Ex("Sled push", "sled", "carry", ["sled"], 70, { inc: 5, note: "metres", cues: ["Low body angle, arms locked", "Short, hard steps"] }),
+  ropes: Ex("Battle ropes", "ropes", "carry", ["ropesk"], 60, { bw: true, note: "seconds", cues: ["Athletic stance, soft knees", "Fast alternating waves, breathe"] }),
+
+  /* --- cardio --- */
+  zone2: { name: "Zone 2 bike", pose: "bike", g: "cardio", eq: ["bike"], rank: 80, cues: ["Conversational pace: you can talk, not sing", "Roughly 110–125 bpm for you"] },
+  rower: { name: "Rower", pose: "rower", g: "cardio", eq: ["rowerm"], rank: 78, cues: ["Legs, then lean, then arms", "Reverse on the way back"] },
+  treadmill: { name: "Treadmill", pose: "treadmill", g: "cardio", eq: ["treadmill"], rank: 74, cues: ["Brisk walk on an incline, or an easy jog", "You should be able to hold a sentence"] },
+  elliptical: { name: "Elliptical", pose: "elliptical", g: "cardio", eq: ["elliptical"], rank: 70, cues: ["Steady rhythm, use the arms", "Easy enough to talk"] },
+  walk: { name: "Brisk walk", pose: "walk", g: "cardio", eq: [], rank: 50, cues: ["Breathing a bit harder than normal", "Outside if you can, daylight helps sleep"] },
+
+  /* --- stretches --- */
   hipflex: { name: "Hip flexor stretch", pose: "hipflex", g: "stretch", cues: ["Tuck the tailbone, squeeze the back glute", "Shift forward gently, reach the arm up"] },
   hamstring: { name: "Seated hamstring stretch", pose: "hamstring", g: "stretch", cues: ["Sit tall, then hinge from the hips", "Reach for the shins, not the toes"] },
   catcow: { name: "Cat-cow", pose: "catcow", g: "stretch", cues: ["Round the back up, then let it sag", "Move with the breath"] },
@@ -308,10 +602,13 @@ const EX = {
   neckside: { name: "Neck side stretch", pose: "neckside", g: "stretch", cues: ["Ear toward the shoulder, other shoulder down", "Rest a hand on your head, no pulling"] },
   crossbody: { name: "Cross-body shoulder stretch", pose: "crossbody", g: "stretch", cues: ["Arm straight across the chest", "Hook it with the other arm and draw it in"] },
   groin: { name: "Wide stance groin stretch", pose: "groin", g: "stretch", cues: ["Feet wide, toes slightly out", "Sink the hips down, chest tall"] },
+
+  /* --- desk reset --- */
   chintuck: { name: "Chin tucks", pose: "chintuck", g: "desk", cues: ["Slide the head straight back, double chin", "Hold 3 seconds, 10 reps"] },
   seatedext: { name: "Chair back extension", pose: "seatedext", g: "desk", cues: ["Sit tall, hands behind head", "Lean back over the chair, open the chest"] },
   pelvic: { name: "Core squeeze", pose: "pelvic", g: "desk", cues: ["Squeeze as if stopping the flow and holding in wind", "Hold 5–10 seconds, relax fully, 10 reps", "Breathe normally, don't clench the glutes"] },
 };
+
 // Movement block, in Ben's order (from his printed sheet)
 const WARMUP = ["hops", "waves", "armswing", "twist", "deadarms", "golf", "march"];
 const EVENING = [["hipflex", "60 s each side"], ["hamstring", "60 s each side"], ["figure4", "60 s each side"], ["chest", "45 s"], ["twist", "45 s each way"], ["calfstretch", "45 s each side"], ["childpose", "60 s"], ["pelvic", "10 slow squeezes"]];
@@ -324,7 +621,7 @@ const DOSE = {
 };
 // What to do about the bit that hurts. Ordered best-first.
 const TIGHT = [
-  { area: "Lower back", ids: ["catcow", "childpose", "figure4", "hipflex"], note: "Nine times out of ten a stiff lower back is tight hips, not a bad back. Loosen the hips first and move gently — resting it flat usually makes it worse." },
+  { area: "Lower back", ids: ["catcow", "childpose", "figure4", "hipflex"], note: "Nine times out of ten a stiff lower back is tight hips, not a bad back. Loosen the hips first and move gently \u2014 resting it flat usually makes it worse." },
   { area: "Hips", ids: ["hipflex", "figure4", "squathold", "groin"], note: "This is the price of long days in the seat and the driver's seat. Hit it after driving, not just at night." },
   { area: "Hamstrings", ids: ["hamstring", "squathold", "catcow"], note: "Hinge from the hips, not the lower back. If your back rounds, you're stretching the wrong thing." },
   { area: "Glutes", ids: ["figure4", "squathold", "hipflex"], note: "Deep glute tightness after squats and RDLs is normal. Figure-4 is the one that gets it." },
@@ -336,86 +633,79 @@ const TIGHT = [
   { area: "Upper back", ids: ["roller", "catcow", "twist", "childpose"], note: "The foam roller extension is the best one you own for this. Shift an inch at a time." },
   { area: "Neck", ids: ["chintuck", "neckside", "chest"], note: "Neck tightness is usually the head drifting forward over a screen all day. Chin tucks fix the cause." },
 ];
-const SPINE = ["squat", "rdl", "lunge", "swing", "goblet", "row", "carry"];
+const SPINE = ["squat", "frontsquat", "smithsquat", "rdl", "deadlift", "goodmorning", "kbdead", "lunge", "walklunge", "bulgarian", "swing", "goblet", "dbsquat", "row", "lmrow", "carry", "kbcarry"];
 
-/* ---------- the weekly program, built from your plan ---------- */
-const S = (id, sets, lo, hi, kg, extra = {}) => ({ id, sets, lo, hi, kg, rest: 60, ...extra });
+/* ---------- the weekly program, built from your plan and your kit ---------- */
 const S3 = (id, lo, hi, kg, rest = 90, extra = {}) => ({ id, sets: 3, lo, hi, kg, rest, ...extra });
 const RAMP = "Ramp up with 1–2 light sets first. Stop 1–2 reps short of failure.";
 
-// Sets, reps and starting weights. Weights come from Ben's Drive workout log (to 22 Aug 2026).
+// Sets, reps and rest by movement pattern.
+const PAT_DEFAULT = {
+  squat: { sets: 3, lo: 8, hi: 8, rest: 90, tip: RAMP }, hinge: { sets: 3, lo: 8, hi: 8, rest: 90, tip: RAMP },
+  hpush: { sets: 3, lo: 8, hi: 8, rest: 90, tip: RAMP }, vpush: { sets: 3, lo: 8, hi: 8, rest: 90, tip: RAMP },
+  hpull: { sets: 3, lo: 8, hi: 10, rest: 90, tip: RAMP }, vpull: { sets: 3, lo: 8, hi: 10, rest: 90, tip: RAMP },
+  lunge: { sets: 3, lo: 10, hi: 10, rest: 60 }, quad: { sets: 3, lo: 12, hi: 12, rest: 60 },
+  ham: { sets: 3, lo: 12, hi: 12, rest: 60 }, glute: { sets: 3, lo: 10, hi: 10, rest: 60 },
+  calf: { sets: 3, lo: 15, hi: 15, rest: 45 }, bi: { sets: 3, lo: 10, hi: 12, rest: 60 },
+  tri: { sets: 3, lo: 10, hi: 12, rest: 60 }, delt: { sets: 3, lo: 12, hi: 15, rest: 45 },
+  core: { sets: 3, lo: 10, hi: 12, rest: 45 }, carry: { sets: 3, lo: 40, hi: 40, rest: 60 },
+};
+// Per-exercise overrides. No starting weights ship with the app: the first time you log
+// something it asks you to pick one, and from then on it works from what you actually lifted.
 const META = {
-  squat:     { sets: 3, lo: 8, hi: 8, kg: 70, rest: 90, tip: RAMP, big: true },
-  rdl:       { sets: 3, lo: 8, hi: 8, kg: 50, rest: 90, tip: RAMP, big: true },
-  bench:     { sets: 3, lo: 8, hi: 8, kg: 55, rest: 90, tip: RAMP, big: true },
-  ohp:       { sets: 3, lo: 8, hi: 8, kg: 30, rest: 90, tip: RAMP, big: true },
-  row:       { sets: 3, lo: 8, hi: 8, kg: 45, rest: 90, tip: RAMP, big: true },
-  dbbench:   { sets: 3, lo: 10, hi: 10, kg: 20 },
-  dbrdl:     { sets: 3, lo: 10, hi: 10, kg: 15 },
-  dbpress:   { sets: 3, lo: 10, hi: 10, kg: 15 },
-  dbrow:     { sets: 3, lo: 10, hi: 10, kg: 22.5, note: "each side" },
-  lmrow:     { sets: 3, lo: 10, hi: 10, kg: 20 },
-  goblet:    { sets: 3, lo: 10, hi: 10, kg: 20 },
-  legext:    { sets: 3, lo: 12, hi: 12, kg: 20 },
-  legcurl:   { sets: 3, lo: 12, hi: 12, kg: 15 },
-  lunge:     { sets: 2, lo: 10, hi: 10, kg: 9, note: "each leg" },
-  stepup:    { sets: 3, lo: 10, hi: 10, kg: null, note: "each leg" },
-  calf:      { sets: 2, lo: 15, hi: 15, kg: null },
-  lateral:   { sets: 3, lo: 12, hi: 12, kg: 7 },
-  reardelt:  { sets: 3, lo: 15, hi: 15, kg: 5 },
-  curl:      { sets: 3, lo: 10, hi: 10, kg: 10 },
-  skull:     { sets: 3, lo: 10, hi: 10, kg: 10 },
-  ohtri:     { sets: 3, lo: 12, hi: 12, kg: null },
-  incline:   { sets: 3, lo: 10, hi: 10, kg: null },
-  landmine:  { sets: 3, lo: 10, hi: 10, kg: null },
-  swing:     { sets: 3, lo: 15, hi: 15, kg: 12 },
-  hipthrust: { sets: 3, lo: 10, hi: 10, kg: null, tip: "Start light and stop if the back talks back." },
-  carry:     { sets: 3, lo: 40, hi: 40, kg: 22.5, note: "metres, kg per hand" },
-  pushup:    { sets: 3, lo: 8, hi: 15, kg: 0, bw: true },
-  pulldown:  { sets: 3, lo: 12, hi: 12, kg: 0, bw: true },
-  facepull:  { sets: 3, lo: 15, hi: 20, kg: 0, bw: true },
-  abroller:  { sets: 2, lo: 8, hi: 8, kg: 0, bw: true },
-  bridge:    { sets: 3, lo: 15, hi: 15, kg: 0, bw: true },
-  deadbug:   { sets: 3, lo: 8, hi: 8, kg: 0, bw: true, note: "each side" },
+  hipthrust: { tip: "Start light and stop if the back talks back." },
+  abroller: { sets: 2, lo: 8, hi: 8 },
 };
 const mk = (id) => {
-  const m = META[id] || { sets: 3, lo: 10, hi: 10, kg: null };
-  return S(id, m.sets, m.lo, m.hi, m.kg, { rest: m.rest || 60, ...(m.bw ? { bw: true } : {}), ...(m.note ? { note: m.note } : {}), ...(m.tip ? { tip: m.tip } : {}) });
+  const ex = EX[id];
+  const d = PAT_DEFAULT[ex.pat] || { sets: 3, lo: 10, hi: 10, rest: 60 };
+  const m = META[id] || {};
+  const out = { id, sets: m.sets || d.sets, lo: m.lo || d.lo, hi: m.hi || d.hi,
+    kg: "kg" in m ? m.kg : null, rest: m.rest || d.rest };
+  const tip = m.tip || d.tip;
+  if (tip) out.tip = tip;
+  if (ex.bw) { out.bw = true; out.kg = 0; }
+  if (ex.note) out.note = ex.note;
+  return out;
 };
 
-// Each template is in priority order: the first exercises survive a short session.
+// Every strength move that a given kit can actually do, best first.
+const STRENGTH_IDS = Object.keys(EX).filter((k) => EX[k].g === "strength");
+const canDo = (id, kit) => (EX[id].eq || []).every((e) => kit.includes(e));
+function optionsFor(pattern, kit) {
+  return STRENGTH_IDS.filter((id) => EX[id].pat === pattern && canDo(id, kit))
+    .sort((a, b) => EX[b].rank - EX[a].rank);
+}
+function cardioFor(kit) {
+  return Object.keys(EX).filter((k) => EX[k].g === "cardio" && canDo(k, kit))
+    .sort((a, b) => EX[b].rank - EX[a].rank)[0] || "walk";
+}
+
+// Each day is a list of movement patterns, most important first.
 const TEMPLATES = {
-  lowerA:  { title: "Lower A", sub: "Squat focus", back: true, ids: ["squat", "dbrdl", "legext", "lunge", "calf", "deadbug"] },
-  lowerB:  { title: "Lower B", sub: "Hinge focus", back: true, ids: ["rdl", "goblet", "legcurl", "hipthrust", "abroller", "calf"] },
-  push:    { title: "Upper Push", sub: "Chest, shoulders, triceps", ids: ["bench", "dbpress", "pushup", "lateral", "skull", "ohtri"] },
-  pull:    { title: "Upper Pull", sub: "Back and biceps", ids: ["row", "dbrow", "pulldown", "reardelt", "curl", "facepull"] },
-  fullA:   { title: "Full Body A", sub: "Everything, one session", back: true, ids: ["ohp", "dbbench", "lmrow", "goblet", "swing", "carry"] },
-  fullB:   { title: "Full Body B", sub: "Everything, one session", back: true, ids: ["squat", "bench", "row", "dbpress", "swing", "plank"] },
-  fullC:   { title: "Full Body C", sub: "Everything, one session", back: true, ids: ["rdl", "incline", "dbrow", "lunge", "curl", "deadbug"] },
+  lowerA: { title: "Lower A", sub: "Squat focus", back: true, slots: ["squat", "hinge:2", "quad", "lunge", "calf", "core"] },
+  lowerB: { title: "Lower B", sub: "Hinge focus", back: true, slots: ["hinge", "lunge", "ham", "glute", "core", "calf"] },
+  push: { title: "Upper Push", sub: "Chest, shoulders, triceps", slots: ["hpush", "vpush", "hpush", "delt", "tri", "tri"] },
+  pull: { title: "Upper Pull", sub: "Back and biceps", slots: ["hpull", "vpull", "hpull", "delt", "bi", "bi"] },
+  fullA: { title: "Full Body A", sub: "Everything, one session", back: true, slots: ["vpush", "hpush", "hpull", "squat:2", "hinge:2", "carry"] },
+  fullB: { title: "Full Body B", sub: "Everything, one session", back: true, slots: ["squat", "hpush", "hpull", "vpush:2", "core", "carry"] },
+  fullC: { title: "Full Body C", sub: "Everything, one session", back: true, slots: ["hinge", "hpush:2", "vpull", "lunge", "bi", "core"] },
 };
-// Which templates to use, by how many lifting days you picked.
 const SPLITS = {
-  1: ["fullB"],
-  2: ["fullA", "fullC"],
-  3: ["lowerA", "push", "pull"],
-  4: ["lowerA", "push", "lowerB", "pull"],
-  5: ["lowerA", "push", "lowerB", "pull", "fullA"],
+  1: ["fullB"], 2: ["fullA", "fullC"], 3: ["lowerA", "push", "pull"],
+  4: ["lowerA", "push", "lowerB", "pull"], 5: ["lowerA", "push", "lowerB", "pull", "fullA"],
   6: ["lowerA", "push", "lowerB", "pull", "fullA", "fullC"],
 };
+// Used to top a session back up when the kit can't fill a slot.
+const BACKFILL = ["hpull", "hpush", "lunge", "squat", "hinge", "glute", "core", "calf", "tri", "bi", "delt", "quad", "ham"];
+
 const STRETCH_BLOCK = [
-  { id: "hipflex", sec: 60, note: "each side" },
-  { id: "hamstring", sec: 60, note: "each side" },
-  { id: "figure4", sec: 60, note: "each side" },
-  { id: "catcow", sec: 60 },
-  { id: "childpose", sec: 60 },
+  { id: "hipflex", sec: 60, note: "each side" }, { id: "hamstring", sec: 60, note: "each side" },
+  { id: "figure4", sec: 60, note: "each side" }, { id: "catcow", sec: 60 }, { id: "childpose", sec: 60 },
 ];
 const MOBILITY_DAY = [
-  { id: "catcow", sec: 60 },
-  { id: "hipflex", sec: 60, note: "each side" },
-  { id: "roller", sec: 60 },
-  { id: "squathold", sec: 60 },
-  { id: "hamstring", sec: 60, note: "each side" },
-  { id: "childpose", sec: 60 },
+  { id: "catcow", sec: 60 }, { id: "hipflex", sec: 60, note: "each side" }, { id: "roller", sec: 60 },
+  { id: "squathold", sec: 60 }, { id: "hamstring", sec: 60, note: "each side" }, { id: "childpose", sec: 60 },
 ];
 
 const DEFAULT_PLAN = {
@@ -423,50 +713,80 @@ const DEFAULT_PLAN = {
   mins: 45,
   cardio: "own",      // "off" | "combined" | "own"
   stretch: "own",     // "off" | "combined" | "own"
-  walk: true,         // a walk on the remaining rest days
-  trackWeight: true,  // show the body weight chart and weigh-ins
+  walk: true,
+  trackWeight: true,
+  trainTime: "06:00",
+  equipment: BEN_EQUIP,
 };
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const weekOrder = (d) => (d + 6) % 7; // Monday first
 
-function buildDays(planIn) {
+function buildDays(planIn, shuffle) {
   const plan = { ...DEFAULT_PLAN, ...(planIn || {}) };
+  const kit = plan.equipment && plan.equipment.length ? plan.equipment : [];
+  const sh = shuffle || {};
   const lift = [...new Set(plan.liftDays)].filter((d) => d >= 0 && d <= 6).sort((a, b) => weekOrder(a) - weekOrder(b));
-  const split = SPLITS[clamp(lift.length, 1, 6)] || SPLITS[4];
+  const canPull = optionsFor("hpull", kit).length + optionsFor("vpull", kit).length;
+  const FULLBODY = ["fullB", "fullA", "fullC"];
+  const split = canPull >= 2 ? (SPLITS[clamp(lift.length, 1, 6)] || SPLITS[4])
+    : FULLBODY.slice(0, clamp(lift.length, 1, 3));
+  const cardioId = cardioFor(kit);
 
-  // Time budget: 5 min warm-up + ~4 min movement block, then about 7 min per strength exercise.
+  // 5 min warm-up + ~4 min movement block, then about 7 min per strength exercise.
   const cardioMins = plan.cardio === "combined" ? clamp(Math.round(plan.mins * 0.25), 8, 15) : 0;
   const stretchMins = plan.stretch === "combined" ? 6 : 0;
-  const budget = plan.mins - 9 - cardioMins - stretchMins;
-  const nBase = clamp(Math.round(budget / 7), 2, 6);
+  const nBase = clamp(Math.round((plan.mins - 9 - cardioMins - stretchMins) / 7), 2, 6);
 
   const days = {};
+  const week = []; // everything already used this week, so days don't all look the same
+  // Pick for one slot: prefer a move not yet used this week, fall back to reuse when the kit is small.
+  const pick = (slot, used, seed) => {
+    const [pattern, sec] = slot.split(":");
+    let opts = optionsFor(pattern, kit).filter((id) => !used.includes(id));
+    if (sec && opts.length > 1) opts = opts.slice(1);
+    // Reshuffle should give a real alternative, not a worse workout: stay near the best option.
+    if (opts.length) { const best = EX[opts[0]].rank; opts = opts.filter((id) => EX[id].rank >= best - 30); }
+    const fresh = opts.filter((id) => !week.includes(id));
+    const pool = fresh.length ? fresh : opts;
+    return pool.length ? pool[seed % pool.length] : null;
+  };
   lift.forEach((dow, i) => {
-    const t = TEMPLATES[split[i % split.length]];
-    const isFull = split[i % split.length].startsWith("full");
-    const n = clamp(isFull && plan.mins >= 45 ? nBase + 1 : nBase, 2, 6);
-    const items = t.ids.slice(0, n).map(mk);
-    // Pair the accessories so they run as supersets and the session fits the time.
+    const key = split[i % split.length];
+    const t = TEMPLATES[key];
+    const seed = sh[dow] || 0;
+    const n = clamp(key.startsWith("full") && plan.mins >= 45 ? nBase + 1 : nBase, 2, 6);
+
+    const used = [];
+    t.slots.slice(0, n).forEach((slot) => {
+      const got = pick(slot, used, seed);
+      if (got) { used.push(got); week.push(got); }
+    });
+    // The kit couldn't fill every slot, so top the session back up.
+    for (let k = 0; used.length < n && k < BACKFILL.length; k++) {
+      const got = pick(BACKFILL[k], used, seed);
+      if (got) { used.push(got); week.push(got); }
+    }
+
+    const items = used.map(mk);
     for (let k = 1; k + 1 < items.length; k += 2) {
       items[k].pair = items[k + 1].id;
       items[k + 1].pair = items[k].id;
     }
-    if (cardioMins) items.push({ id: "zone2", min: cardioMins, note: "finisher, easy pace" });
+    if (cardioMins) items.push({ id: cardioId, min: cardioMins, note: "finisher, easy pace" });
     if (stretchMins) STRETCH_BLOCK.slice(0, 3).forEach((x) => items.push({ ...x }));
     days[dow] = { title: t.title, sub: t.sub, back: t.back, items };
   });
 
   const rest = [0, 1, 2, 3, 4, 5, 6].filter((d) => !lift.includes(d)).sort((a, b) => weekOrder(a) - weekOrder(b));
-  const wantCardioDay = plan.cardio === "own";
-  const wantStretchDay = plan.stretch === "own";
   rest.forEach((dow, i) => {
     const first = i === 0;
-    const cardioHere = wantCardioDay && first;
-    const stretchHere = wantStretchDay && first;
+    const cardioHere = plan.cardio === "own" && first;
+    const stretchHere = plan.stretch === "own" && first;
     if (cardioHere && stretchHere) {
-      days[dow] = { title: "Cardio + Mobility", sub: "Zone 2, then loosen up", items: [{ id: "zone2", min: clamp(plan.mins - 20, 15, 45) }, ...MOBILITY_DAY.map((x) => ({ ...x }))] };
+      days[dow] = { title: "Cardio + Mobility", sub: "Steady effort, then loosen up",
+        items: [{ id: cardioId, min: clamp(plan.mins - 20, 15, 45) }, ...MOBILITY_DAY.map((x) => ({ ...x }))] };
     } else if (cardioHere) {
-      days[dow] = { title: "Cardio", sub: "Zone 2, steady and easy", items: [{ id: "zone2", min: clamp(plan.mins - 10, 15, 45) }, { id: "rower", min: 8, note: "steady" }] };
+      days[dow] = { title: "Cardio", sub: "Steady and easy", items: [{ id: cardioId, min: clamp(plan.mins - 10, 15, 45) }] };
     } else if (stretchHere) {
       days[dow] = { title: "Mobility", sub: "Loosen everything off", items: MOBILITY_DAY.map((x) => ({ ...x })) };
     } else if (plan.walk) {
@@ -478,21 +798,17 @@ function buildDays(planIn) {
   return days;
 }
 
-// DAYS is rebuilt whenever the plan changes (App does this on every render).
-let DAYS = buildDays(DEFAULT_PLAN);
-const applyPlan = (plan) => { DAYS = buildDays(plan); };
+// DAYS is rebuilt from the saved plan on every render.
+let DAYS = buildDays(DEFAULT_PLAN, {});
+const applyPlan = (plan, shuffle) => { DAYS = buildDays(plan, shuffle); };
 
-const TRAVEL = { title: "Hotel session", sub: "20 minutes, no gear", items: [S3("pushup", 8, 15, 0, 45, { bw: true }), S3("lunge", 10, 12, 0, 45, { bw: true, note: "per leg" }), S3("bridge", 15, 20, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "per side" }), { id: "plank", sec: 45 }, { id: "walk", min: 20 }] };
-const BACKCARE = { title: "Back care", sub: "Gentle version for a sore back", items: [{ id: "bike", min: 10 }, S3("bridge", 12, 12, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "per side" }), { id: "catcow", sec: 60 }, { id: "hipflex", sec: 60 }, { id: "walk", min: 15 }] };
+const TRAVEL = { title: "Hotel session", sub: "20 minutes, no gear", items: [S3("pushup", 8, 15, 0, 45, { bw: true }), S3("bwlunge", 10, 12, 0, 45, { bw: true, note: "each leg" }), S3("bridge", 15, 20, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "each side" }), { id: "plank", sec: 45 }, { id: "walk", min: 20 }] };
+const BACKCARE = { title: "Back care", sub: "Gentle version for a sore back", items: [{ id: "bike", min: 10 }, S3("bridge", 12, 12, 0, 45, { bw: true }), S3("deadbug", 8, 8, 0, 30, { bw: true, note: "each side" }), { id: "catcow", sec: 60 }, { id: "hipflex", sec: 60 }, { id: "walk", min: 15 }] };
 const needsWarmup = (items) => (items || []).some((x) => x.sets || (x.min && x.id !== "walk"));
 const sessionFor = (key) => (key === "travel" ? TRAVEL : key === "backcare" ? BACKCARE : DAYS[key]);
 
 /* ---------- why + outcomes ---------- */
-const DEFAULT_WHYS = [
-  "Keep up with the boys. Niko's six, and there's a lot of footy, bikes and beaches still to come.",
-  "Make sure the kilos coming off are fat, not muscle. The injections handle appetite; lifting and protein decide what's lost.",
-  "Energy for two businesses and 4am starts, without running on fumes.",
-];
+const DEFAULT_WHYS = [];
 const OUTCOMES = [
   { t: "Muscle kept, fat lost", d: "Resistance training plus protein at 130 g+ is the main thing that protects muscle while appetite is suppressed. More muscle means a better metabolism and better-looking results at the same scale weight." },
   { t: "Heart and blood pressure", d: "Regular cardio and weight loss both lower blood pressure and resting heart rate. The Wednesday bike and daily steps are doing real work here." },
@@ -505,7 +821,7 @@ const OUTCOMES = [
 
 /* ---------- storage ---------- */
 const KEY = "sharpen-v1";
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "2.0.0";
 // The log lives in this browser only. Nothing is sent anywhere.
 const store = {
   get() { try { return window.localStorage.getItem(KEY); } catch (e) { return null; } },
@@ -526,12 +842,14 @@ const SEED_SESSIONS = [
 ];
 const SEED_WEIGH = [{ date: "2026-07-31", kg: 111 }, { date: "2026-08-28", kg: 107.7 }, { date: "2026-09-10", kg: 108 }];
 const DEFAULT = {
-  ver: 2,
-  profile: { name: "Ben", startKg: 111, heightCm: 175, goalKg: 95, jabDay: 6, stepsTarget: 8000, proteinTarget: 130, waterTarget: 2500, movesTarget: 6, shakeG: 25, barG: 20 },
-  weighins: SEED_WEIGH,
+  ver: 3,
+  setupDone: false,
+  profile: { name: "", startKg: null, heightCm: null, goalKg: null, jabDay: null, stepsTarget: 8000, proteinTarget: 130, waterTarget: 2500, movesTarget: 6, shakeG: 25, barG: 20 },
+  weighins: [],
   plan: DEFAULT_PLAN,
+  shuffles: {},
   lastBackup: null,
-  habits: {}, sessions: SEED_SESSIONS, active: null, whys: DEFAULT_WHYS, calendar: null, chat: [], apiKey: "", model: "claude-sonnet-5",
+  habits: {}, sessions: [], active: null, whys: DEFAULT_WHYS, calendar: null, chat: [], apiKey: "", model: "claude-sonnet-5",
 };
 const blankHabits = { protein: 0, water: 0, steps: 0, moves: 0, pelvic: false, stretch: false, bed: false, jab: false };
 
@@ -612,7 +930,7 @@ const GAINS = [
   "Deeper sleep and a better mood",
   "Strong enough at 60 to keep up with anyone",
 ];
-function coachLine({ hour, dow, trained, done, total, weekCount, jab, travel, missedYesterday, name, goal, toGo, weighedToday }) {
+function coachLine({ hour, dow, trained, done, total, weekCount, jab, travel, missedYesterday, name, goal, toGo, weighedToday, trainTime }) {
   const gain = GAINS[(dow + hour) % GAINS.length].toLowerCase();
   const plan = DAYS[dow] || { title: "Today", items: [] };
   const restDay = !plan.items.some((x) => x.sets);
@@ -621,11 +939,12 @@ function coachLine({ hour, dow, trained, done, total, weekCount, jab, travel, mi
   if (jab) return "Jab day and the big session. Protein first, water in, then earn it. Saturday's the longest workout of the week.";
   if (!trained && missedYesterday && hour < 12) return "Yesterday's gone. The rule is never miss two. Get today done.";
   if (goal && dow === 5 && !weighedToday && hour < 9) return "Friday weigh-in. Straight after the toilet, before food. The weekly trend is the truth.";
-  if (hour < 6 && !trained && !restDay) return `4:15, ${name}. ${plan.title} is loaded. Every session is a step to ${target}.`;
+  const tHour = Number((trainTime || "06:00").split(":")[0]);
+  if (hour <= tHour && !trained && !restDay) return `${trainTime}, ${name}. ${plan.title} is loaded. Every session is a step to ${target}.`;
   if (done >= total - 1) return `Nearly a perfect day. Finish it off. This is how ${target} happens.`;
   if (trained && done < total / 2) return "Session's done. Don't leave the rest on the table: protein, water, and get up from that desk.";
   if (weekCount >= 4) return `${weekCount} sessions this week. That's the guy who gets to ${target}.`;
-  if (hour >= 17) return "Stretch at 7:45, bed by 8. Tomorrow's 4:15 starts right now.";
+  if (hour >= 17) return `Stretch tonight, then sleep. Tomorrow's ${trainTime} starts right now.`;
   const pool = [
     goal ? `${toGo} kg to go. Chip away. Today's payoff: ${gain}.` : `Today's payoff: ${gain}. Chip away.`,
     "Training is the signal, protein is the material. Miss the 130 g and the muscle pays for it.",
@@ -707,7 +1026,7 @@ function RoutineSheet({ which, onClose }) {
   return (
     <Sheet onClose={onClose}>
       <h2 className="h2" style={{ fontSize: 24 }}>{which === "evening" ? "Evening stretch" : "Desk reset"}</h2>
-      <p className="sub">{which === "evening" ? "About 10 minutes at 7:45. It's what makes the 4:15 start feel human." : "Two minutes, every hour you've been sitting or driving."}</p>
+      <p className="sub">{which === "evening" ? "About 10 minutes before bed. It's what makes an early start feel human." : "Two minutes, every hour you've been sitting or driving."}</p>
       {list.map(([id, dose]) => (
         <div key={id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderTop: `1px solid ${C.line}` }}>
           <div style={{ width: 72, height: 72, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose={EX[id].pose} imp={EX[id].imp} /></div>
@@ -1043,6 +1362,12 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
           <button className="pill go" style={{ width: "100%", marginTop: 20, padding: 16, fontSize: 17 }}
             onClick={() => (plan.back ? setAskBack(key) : start(key))}>Start {plan.title}</button>
         )}
+        {plan.items.some((x) => x.sets) && typeof key === "number" && (
+          <button className="pill ghost" style={{ width: "100%", marginTop: 10, padding: 13 }}
+            onClick={() => setS((o) => ({ ...o, shuffles: { ...(o.shuffles || {}), [key]: ((o.shuffles || {})[key] || 0) + 1 } }))}>
+            <Shuffle size={16} style={{ verticalAlign: -3, marginRight: 8 }} />Reshuffle this session
+          </button>
+        )}
         {plan.items.length === 0 && <p className="sub" style={{ marginTop: 18 }}>Nothing scheduled. Recovery is part of the plan — or change your days under Coach, Your plan.</p>}
         {plan.items[0] && plan.items[0].sets && (
           <button onClick={() => start(key, null, true)} style={{ display: "block", margin: "14px auto 0", color: C.mist, fontSize: 14 }}>Flat today? Do the first lift properly and call it.</button>
@@ -1332,14 +1657,149 @@ function Library({ openEx, openTight }) {
 
 /* ---------- Plan editor ---------- */
 const MINS_CHOICES = [20, 30, 45, 60, 75];
+/* ---------- first run ---------- */
+function EquipPicker({ value, onChange }) {
+  const has = (id) => value.includes(id);
+  const toggle = (id) => onChange(has(id) ? value.filter((x) => x !== id) : [...value, id]);
+  const allOn = ALL_EQUIP.every((id) => has(id));
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+        <button className="pill ghost" style={{ padding: "9px 16px", fontSize: 14 }}
+          onClick={() => onChange(allOn ? [] : [...ALL_EQUIP])}>{allOn ? "Clear all" : "I train at a full gym"}</button>
+        {value.length > 0 && !allOn && <button className="pill ghost" style={{ padding: "9px 16px", fontSize: 14 }} onClick={() => onChange([])}>Clear</button>}
+      </div>
+      {EQUIP.map(([group, items]) => (
+        <div key={group} style={{ marginTop: 18 }}>
+          <div className="sub" style={{ fontWeight: 600, color: C.paper, marginBottom: 8 }}>{group}</div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {items.map(([id, label]) => (
+              <button key={id} onClick={() => toggle(id)} aria-pressed={has(id)}
+                style={{ padding: "10px 14px", borderRadius: 999, fontSize: 14, fontWeight: 600, textAlign: "left",
+                  background: has(id) ? C.sun : C.panel, color: has(id) ? C.night : C.paper }}>{label}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <p className="sub" style={{ marginTop: 16 }}>
+        {value.length === 0
+          ? "Nothing ticked, so you'll get bodyweight sessions you can do anywhere. Tick whatever you've got and the whole programme changes to suit."
+          : `${value.length} ticked. Every session is built from what you actually have.`}
+      </p>
+    </div>
+  );
+}
+
+function Setup({ onDone }) {
+  const [step, setStep] = useState(0);
+  const [name, setName] = useState("");
+  const [kit, setKit] = useState([]);
+  const [days, setDays] = useState([1, 2, 4, 5]);
+  const [mins, setMins] = useState(45);
+  const [cardio, setCardio] = useState("own");
+  const [stretch, setStretch] = useState("combined");
+  const [trackWeight, setTrackWeight] = useState(true);
+  const [startKg, setStartKg] = useState("");
+  const [goalKg, setGoalKg] = useState("");
+
+  const toggleDay = (d) => setDays(days.includes(d) ? days.filter((x) => x !== d) : [...days, d]);
+  const finish = () => {
+    const plan = { liftDays: days.length ? days : [1, 3, 5], mins, cardio, stretch, walk: true, trackWeight, equipment: kit };
+    const profile = { name: name.trim() || "there", startKg: Number(startKg) || null, goalKg: Number(goalKg) || null };
+    onDone({ plan, profile, weighins: trackWeight && Number(startKg) ? [{ date: todayKey(), kg: Number(startKg) }] : [] });
+  };
+
+  const Choice = ({ label, options, value, onPick }) => (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+        {options.map(([v, t]) => (
+          <button key={v} onClick={() => onPick(v)} aria-pressed={value === v}
+            style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: value === v ? C.sun : C.panel, color: value === v ? C.night : C.paper }}>{t}</button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const steps = [
+    <div key="0">
+      <h1 className="h1">Let's set you up</h1>
+      <p className="lede">Four quick questions and you'll have a programme built around your gear and your week. You can change any of it later.</p>
+      <div style={{ marginTop: 24 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>What should I call you?</div>
+        <input className="inp" value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" autoComplete="given-name" />
+      </div>
+    </div>,
+    <div key="1">
+      <h1 className="h1">What have you got?</h1>
+      <p className="lede">Tick everything you can get your hands on. Nothing ticked is fine too.</p>
+      <div style={{ marginTop: 18 }}><EquipPicker value={kit} onChange={setKit} /></div>
+    </div>,
+    <div key="2">
+      <h1 className="h1">Your week</h1>
+      <p className="lede">Be honest about what you'll actually turn up for. Four solid days beats six you skip.</p>
+      <div style={{ marginTop: 22 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Days you can train</div>
+        <div style={{ display: "flex", gap: 5 }}>
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+            <button key={d} onClick={() => toggleDay(d)} aria-pressed={days.includes(d)}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, background: days.includes(d) ? C.sun : C.panel, color: days.includes(d) ? C.night : C.paper }}>{DOW[d]}</button>
+          ))}
+        </div>
+      </div>
+      <Choice label="How long have you got?" value={mins} onPick={setMins} options={MINS_CHOICES.map((m) => [m, `${m} min`])} />
+      <Choice label="Cardio" value={cardio} onPick={setCardio} options={[["off", "Leave it out"], ["combined", "In each session"], ["own", "Its own day"]]} />
+      <Choice label="Stretching" value={stretch} onPick={setStretch} options={[["off", "Leave it out"], ["combined", "End of each session"], ["own", "Its own day"]]} />
+    </div>,
+    <div key="3">
+      <h1 className="h1">Body weight</h1>
+      <p className="lede">Only if you want it tracked. Strength numbers get tracked either way.</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 0", marginTop: 10, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ flex: 1, fontWeight: 600 }}>Track body weight</div>
+        <Toggle on={trackWeight} onClick={() => setTrackWeight(!trackWeight)} label="Track body weight" />
+      </div>
+      {trackWeight && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 110, fontWeight: 600 }}>Right now</div>
+            <Stepper value={startKg} step={0.1} dec unit="kg" width={86} onChange={setStartKg} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 110, fontWeight: 600 }}>Goal</div>
+            <Stepper value={goalKg} step={0.5} dec unit="kg" width={86} onChange={setGoalKg} />
+          </div>
+          <p className="sub" style={{ marginTop: 12 }}>Leave the goal blank if you'd rather not have a number.</p>
+        </div>
+      )}
+    </div>,
+  ];
+
+  return (
+    <div className="wrap" style={{ paddingTop: 36, paddingBottom: 40 }}>
+      <div style={{ display: "flex", gap: 5, marginBottom: 26 }}>
+        {steps.map((_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? C.sun : C.line }} />)}
+      </div>
+      {steps[step]}
+      <div style={{ display: "flex", gap: 10, marginTop: 30 }}>
+        {step > 0 && <button className="pill ghost" onClick={() => setStep(step - 1)}>Back</button>}
+        {step < steps.length - 1
+          ? <button className="pill go" style={{ flex: 1 }} onClick={() => setStep(step + 1)}>Next</button>
+          : <button className="pill go" style={{ flex: 1 }} onClick={finish}>Build my programme</button>}
+      </div>
+    </div>
+  );
+}
+
+
 function PlanSheet({ s, setS, onClose }) {
+  const [eq, setEq] = useState(false);
   const plan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
-  const set = (patch) => setS((o) => ({ ...o, plan: { ...DEFAULT_PLAN, ...(o.plan || {}), ...patch } }));
+  const set = (patch) => setS((o) => ({ ...o, plan: { ...DEFAULT_PLAN, ...(o.plan || {}), ...patch }, shuffles: {} }));
   const toggleDay = (d) => {
     const next = plan.liftDays.includes(d) ? plan.liftDays.filter((x) => x !== d) : [...plan.liftDays, d];
     if (next.length) set({ liftDays: next });
   };
-  const preview = buildDays(plan);
+  const preview = buildDays(plan, {});
   const restCount = 7 - [...new Set(plan.liftDays)].length;
   const ownDayWanted = plan.cardio === "own" || plan.stretch === "own";
   const Row = ({ label, options, value, onPick }) => (
@@ -1378,6 +1838,19 @@ function PlanSheet({ s, setS, onClose }) {
 
       <Row label="How long you've got" value={plan.mins} onPick={(v) => set({ mins: v })}
         options={MINS_CHOICES.map((m) => [m, `${m} min`])} />
+
+      <div style={{ marginTop: 22 }}>
+        <div style={{ fontWeight: 600, marginBottom: 4 }}>Your equipment</div>
+        <div className="sub" style={{ marginBottom: 8 }}>Every exercise is picked from what you tick here.</div>
+        <button className="pill ghost" onClick={() => setEq(!eq)}>{eq ? "Done with equipment" : `Change equipment (${(plan.equipment || []).length} ticked)`}</button>
+        {eq && <div style={{ marginTop: 14 }}><EquipPicker value={plan.equipment || []} onChange={(v) => set({ equipment: v })} /></div>}
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>What time do you train?</div>
+        <input id="trainTime" className="inp" type="time" value={plan.trainTime || "06:00"} onChange={(e) => set({ trainTime: e.target.value })} style={{ maxWidth: 160 }} />
+        <div className="sub" style={{ marginTop: 6 }}>Used for the coaching nudges and the calendar reminders.</div>
+      </div>
 
       <Row label="Cardio" value={plan.cardio} onPick={(v) => set({ cardio: v })}
         options={[["off", "Leave it out"], ["combined", "In each session"], ["own", "Its own day"]]} />
@@ -1424,28 +1897,28 @@ function PlanSheet({ s, setS, onClose }) {
 
 const QUICK = [
   {
-    q: "What should I eat before the 4:15 session?",
-    a: "Not much, and that's fine. At 4:15 your body is running on yesterday's food, and Mounjaro will have your appetite low anyway.\n\nIf you want something: half a protein shake, or a banana. Small, quick, no fibre.\n\nThe meal that matters is the one after. Get 30–40 g of protein in within an hour or two of finishing — that's when the muscle you just trained gets rebuilt.",
+    q: "What should I eat before a session?",
+    a: "Less than you'd think. If you train early, your body is running on yesterday's food and that is fine.\n\nIf you want something: half a protein shake, or a banana. Small, quick, low fibre, 30\u201360 minutes before.\n\nThe meal that matters is the one after. Get 30\u201340 g of protein in within a couple of hours of finishing \u2014 that is when the muscle you just trained gets rebuilt.",
   },
   {
     q: "My back's tight. What do I do today?",
-    a: "Start the session and pick \"A bit tight\" on the back check. Squats, RDLs, lunges, swings, goblets, rows and carries all drop 10% and you stop two reps short.\n\nIf it's properly sore, pick \"Sore\" and the app swaps you to the back-care session: easy bike, bridges, dead bugs, cat-cow, hip flexor stretch, walk.\n\nStill sore after a week, or pain running down a leg? That's a physio call, not an app call.",
+    a: "Start the session and pick \"A bit tight\" on the back check. Squats, hinges, lunges, swings and rows all drop 10% and you stop two reps short.\n\nIf it is properly sore, pick \"Sore\" and you get the back-care session instead: easy cardio, bridges, dead bugs, cat-cow, hip flexor stretch, walk.\n\nStill sore after a week, or pain running down a leg? That is a physio call, not an app call.",
   },
   {
     q: "I'm flat this morning. Give me a pep talk.",
-    a: "You're not flat, you're 41 and it's 4:15am. That's just what this hour feels like.\n\nHere's the deal: put five minutes on the bike. That's the whole commitment. If you still feel wrecked after five minutes, do the first lift properly and call it — that's in your program, it's not quitting.\n\nNine times out of ten you'll finish the session. The five minutes is the only decision you have to make.",
+    a: "Everyone is, most days. Motivation turns up after you start, not before.\n\nHere is the deal: do the five minute warm-up. That is the whole commitment. If you still feel wrecked after five minutes, do the first lift properly and call it \u2014 that is built into the plan, it is not quitting.\n\nNine times out of ten you will finish the session. The five minutes is the only decision you have to make.",
   },
   {
     q: "How do I know I'm losing fat, not muscle?",
-    a: "Two numbers, side by side.\n\nThe scale should trend down about 0.5–1 kg a week. Your strength numbers on the Progress screen should hold or climb.\n\nIf the weight drops and the squat, bench, RDL and row hold, the loss is fat. If your lifts start sliding, that's the signal to lift your protein and make sure you're not under-eating.",
+    a: "Two numbers, side by side.\n\nThe scale should trend down about 0.5\u20131 kg a week. Your strength numbers on the Progress screen should hold or climb.\n\nIf the weight drops and your main lifts hold, the loss is fat. If your lifts start sliding, that is the signal to lift your protein and make sure you are not under-eating.",
   },
   {
     q: "I missed a few days. Where do I pick up?",
-    a: "Straight back in, nothing changes. Never miss two is the only rule.\n\nAfter more than 10 days off an exercise, the app holds the weight exactly where you left it instead of adding. Do that weight for the full reps, then earn the jump next time.\n\nDon't try to make up sessions. Just do today's.",
+    a: "Straight back in, nothing changes. Never miss two is the only rule.\n\nAfter more than 10 days off an exercise the app holds the weight where you left it instead of adding. Past three weeks it drops you 10%, past six weeks 20%, so you rebuild the movement before chasing the number.\n\nDo not try to make up sessions. Just do today's.",
   },
   {
     q: "What actually matters most right now?",
-    a: "In order:\n\n1. Protein at 130 g+. On Mounjaro this is the thing that decides whether the weight coming off is fat or muscle.\n2. Turning up six days. Not perfect sessions — turning up.\n3. Water at 2.5 L. Low water makes the scale lie and makes you feel worse than you are.\n4. Getting off the chair every hour.\n\nEverything else is detail.",
+    a: "In order:\n\n1. Protein. This is what decides whether the weight coming off is fat or muscle.\n2. Turning up. Not perfect sessions \u2014 turning up.\n3. Water. Low water makes the scale lie and makes you feel worse than you are.\n4. Getting off the chair every hour.\n\nEverything else is detail.",
   },
 ];
 
@@ -1496,20 +1969,22 @@ function icsEvent({ uid, day, start, mins, title, desc, alarm }) {
   ];
 }
 
-function buildIcs({ training, desk, stretch }) {
+function buildIcs({ training, desk, stretch }, plan) {
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Sharpen//EN", "CALSCALE:GREGORIAN", ...ICS_TZ];
   if (training) {
+    const lifts = [...new Set(plan.liftDays)];
     for (let d = 0; d <= 6; d++) {
-      const plan = DAYS[d];
-      const isWalk = d === 0;
+      const day = DAYS[d];
+      if (!day || !day.items.length) continue;
+      const isLift = lifts.includes(d);
       lines.push(
         ...icsEvent({
           uid: `sharpen-train-${d}`,
           day: d,
-          start: isWalk ? "07:00" : "04:15",
-          mins: isWalk ? 45 : 45,
-          title: `Sharpen: ${plan.title}`,
-          desc: `${plan.sub}\n\n5 min warm-up (bike or rower), then the movement block, then the session.`,
+          start: isLift ? plan.trainTime : "07:00",
+          mins: isLift ? plan.mins : 45,
+          title: `Sharpen: ${day.title}`,
+          desc: `${day.sub}\n\n5 min warm-up, then the movement block, then the session.`,
           alarm: true,
         })
       );
@@ -1591,22 +2066,39 @@ function coachSystem(s, today) {
   const recent = s.sessions.slice(-4).map((x) => `${x.date} ${x.title}: ` + x.items.filter((i) => i.sets).map((i) => `${EX[i.id] ? EX[i.id].name : i.id} ${i.sets.filter((q) => q.done).map((q) => `${q.w || "bw"}x${q.r}`).join(" ")}`).join("; ") + (x.note ? ` (note: ${x.note})` : "")).join("\n");
   const h = { ...blankHabits, ...(s.habits[today] || {}) };
   const W = [...s.weighins].sort((a, b) => (a.date < b.date ? -1 : 1));
-  return `You are Ben's personal coach inside his training app. Push him like a good coach: direct, demanding and energetic, no excuses entertained, never shaming. Tie every push to a concrete gain: his ${s.profile.goalKg || 95} kg goal weight, keeping muscle while the fat goes, keeping up with his boys, energy, heart health, circulation. Plain New Zealand English, no jargon. Keep replies short (under 120 words) unless he asks for detail. He uses voice-to-text, so interpret typos sensibly.
-About Ben: 41, about 175 cm, started at ${s.profile.startKg} kg, now ${W.length ? W[W.length - 1].kg : "?"} kg. Vegetarian. On Mounjaro (tirzepatide) prescribed by his GP. Goal: lose fat while keeping muscle. Protein target ${s.profile.proteinTarget} g+, water ${s.profile.waterTarget / 1000} L+. Trains 4:15 to 5:00am in a home garage gym, six days: Mon Lower A (squat), Tue Upper Push, Wed Cardio + Mobility, Thu Lower B (hinge), Fri Upper Pull, Sat Full Body, Sun walk. Every workout starts with a 5 min warm-up (bike or rower) then his "movement block": lymphatic hopping, body waves, arm swings, trunk twists, dead arms, golf swings, marches. Program rules from his plan: double progression, stop compound sets 1-2 reps short of failure, bad day = do the first lift properly and finish, deload every 6th week. After a break of more than 10 days from a session, weights stay the same as last time, never go up. Goal weight ${s.profile.goalKg || 95} kg. Has had lower back tightness when squats, RDLs and lunges were loaded in the same week during a deficit. Long days of sitting and driving. Sleep apnoea well controlled with an AirMini; bed by 8pm, up at 4am. Also working on circulation and erectile function with his GP; exercise, weight loss and pelvic floor training ("core squeeze" in the app) are part of his plan. Be discreet: never raise this topic yourself and call it "circulation" or "vitality" unless he uses other words first. Mounjaro jab day is Saturday.
-Equipment: power rack, 20 kg bar and plates, EZ bar, landmine, hex dumbbells to 35 kg, kettlebells, adjustable bench with leg curl/extension and preacher, spin bike, air rower, plyo boxes, bands, ab roller, push-up board, foam roller. No pull-up bar.
-Today (${today}): protein ${h.protein} g, water ${h.water} ml, steps ${h.steps}, desk breaks ${h.moves}.
-Recent sessions:\n${recent || "none logged yet"}
-Rules: evidence-based; never diagnose; for medication doses, side effects or pain that persists, suggest his GP or physio. Celebrate consistency, reframe missed days without guilt ("never miss two").`;
+  const P = s.profile;
+  const plan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
+  const kit = (plan.equipment || []).map((e) => EQUIP_LABEL[e]).filter(Boolean).join(", ") || "bodyweight only";
+  const week = [...new Set(plan.liftDays)].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+    .map((d) => `${DOWL[d]} ${(DAYS[d] || {}).title || ""}`).join(", ");
+  const weight = W.length ? `${W[W.length - 1].kg} kg` : "not tracked";
+  const goal = plan.trackWeight && P.goalKg ? `${P.goalKg} kg` : null;
+  return `You are ${P.name || "this person"}'s coach inside their training app. Push them like a good coach: direct, demanding and energetic, no excuses entertained, never shaming. Tie every push to a concrete gain they can feel: strength held, energy, heart health, keeping up with the people they care about${goal ? `, and their ${goal} goal` : ""}. Plain English, no jargon. Keep replies under 120 words unless they ask for detail. They may be using voice-to-text, so read past typos.
+
+What you know about them, and nothing more:
+- Name: ${P.name || "unknown"}. Current weight: ${weight}.${goal ? ` Goal: ${goal}.` : ""}
+- Trains ${[...new Set(plan.liftDays)].length} days a week, ${plan.mins} minutes a session: ${week}.
+- Equipment available: ${kit}.
+- Daily targets: protein ${P.proteinTarget} g, water ${P.waterTarget / 1000} L, ${P.stepsTarget} steps, ${P.movesTarget} breaks up from the desk.
+- Today so far: protein ${h.protein} g, water ${h.water} ml, steps ${h.steps}, desk breaks ${h.moves}.
+- Recent sessions:
+${recent || "none logged yet"}
+
+How the programme works, so your advice matches it: every session opens with a 5 minute warm-up then a movement block. Double progression - hit the top of the rep range on every set and the weight goes up next time. Stop compound sets 1-2 reps short of failure. A bad day means doing the first lift properly and finishing there. After more than 10 days off an exercise the weight holds; after 3 weeks it drops 10%, after 6 weeks 20%.
+
+Rules: evidence-based. Never diagnose. Anything about medication, or pain that persists more than a week or runs down a limb, goes to their GP or physio. Do not assume anything about their health, diet or circumstances that they have not told you in this conversation. Celebrate consistency and reframe missed days without guilt - never miss two.`;
 }
 
 function planSummary(s) {
   const plan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
   const n = [...new Set(plan.liftDays)].length;
+  const kit = (plan.equipment || []).length;
   const bits = [`${n} lifting ${n === 1 ? "day" : "days"} a week`, `${plan.mins} minutes a session`];
+  bits.push(kit ? `${kit} pieces of kit` : "bodyweight only");
   bits.push(plan.cardio === "off" ? "no cardio" : plan.cardio === "own" ? "cardio on its own day" : "cardio in each session");
   bits.push(plan.stretch === "off" ? "no stretching" : plan.stretch === "own" ? "stretching on its own day" : "stretching at the end of each session");
   if (!plan.trackWeight) bits.push("weight not tracked");
-  return bits.join(" · ") + ".";
+  return bits.join(" \u00b7 ") + ".";
 }
 
 function Section({ title, sub, children, first }) {
@@ -1733,7 +2225,7 @@ function Coach({ s, setS, today, openPlan }) {
 
       <Section title="Reminders on your phone" sub="The app can't buzz your phone on its own. This makes a calendar file instead — import it once and your phone's calendar does the reminding, forever.">
         <div style={{ marginTop: 12 }}>
-          {[["training", "Training sessions", "Mon–Sat 4:15am, Sunday walk 7am"], ["desk", "Desk resets", "Weekdays 9:30, 11:30 and 2:30"], ["stretch", "Evening stretch", "Every day at 7:45pm"]].map(([k, t, d]) => (
+          {[["training", "Training sessions", `Your training days at ${({ ...DEFAULT_PLAN, ...(s.plan || {}) }).trainTime}`], ["desk", "Desk resets", "Weekdays 9:30, 11:30 and 2:30"], ["stretch", "Evening stretch", "Every day at 7:45pm"]].map(([k, t, d]) => (
             <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
               <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>{t}</div><div className="sub">{d}</div></div>
               <Toggle on={ics[k]} onClick={() => setIcs({ ...ics, [k]: !ics[k] })} label={t} />
@@ -1741,7 +2233,7 @@ function Coach({ s, setS, today, openPlan }) {
           ))}
         </div>
         <button className="pill go" style={{ marginTop: 14 }}
-          onClick={() => { const ok = download("sharpen-reminders.ics", buildIcs(ics), "text/calendar;charset=utf-8"); setNote(ok ? "Calendar file saved. Open it and your phone will offer to add the reminders." : "Couldn't make the calendar file."); }}>
+          onClick={() => { const ok = download("sharpen-reminders.ics", buildIcs(ics, { ...DEFAULT_PLAN, ...(s.plan || {}) }), "text/calendar;charset=utf-8"); setNote(ok ? "Calendar file saved. Open it and your phone will offer to add the reminders." : "Couldn't make the calendar file."); }}>
           <CalendarDays size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Make my reminders file
         </button>
         <p className="sub" style={{ marginTop: 8 }}>Repeating weekly, with an alert at the start of each one. Delete any you don't want straight from your calendar.</p>
@@ -1822,7 +2314,7 @@ export default function App() {
   const [tightOpen, setTightOpen] = useState(false);
   const today = todayKey();
   const [pickDay, setPickDay] = useState(dowOf(today));
-  applyPlan(s.plan); // rebuild the week from the saved plan before anything renders
+  applyPlan(s.plan, s.shuffles); // rebuild the week from the saved plan before anything renders
 
   useEffect(() => {
     (() => {
@@ -1838,6 +2330,11 @@ export default function App() {
               profile: { ...next.profile, goalKg: 95, jabDay: 6, shakeG: 25, barG: 20 },
               sessions: [...SEED_SESSIONS.filter((x) => !dates.has(x.date)), ...(v.sessions || [])].sort((a, b) => (a.date < b.date ? -1 : 1)),
               weighins: [...SEED_WEIGH.filter((x) => !wdates.has(x.date)), ...(v.weighins || [])] };
+          }
+          if ((v.ver || 1) < 3) {
+            // Already using it: keep the week exactly as it was and fill in the kit behind it.
+            next = { ...next, ver: 3, setupDone: true, shuffles: v.shuffles || {},
+              plan: { ...DEFAULT_PLAN, ...(v.plan || {}), trainTime: (v.plan && v.plan.trainTime) || "04:15", equipment: (v.plan && v.plan.equipment) || BEN_EQUIP } };
           }
           setS(next);
         }
@@ -1864,7 +2361,8 @@ export default function App() {
   const curKg = [...s.weighins].sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-1)[0];
   const tracking = { ...DEFAULT_PLAN, ...(s.plan || {}) }.trackWeight;
   const coach = coachLine({
-    hour: nzHour(), dow, trained, done, total: checks.length, name: P.name, goal: tracking ? P.goalKg || 95 : null,
+    hour: nzHour(), dow, trained, done, total: checks.length, name: P.name || "you", goal: tracking ? P.goalKg : null,
+    trainTime: { ...DEFAULT_PLAN, ...(s.plan || {}) }.trainTime,
     toGo: curKg && P.goalKg ? Math.round((curKg.kg - P.goalKg) * 10) / 10 : "A few", weighedToday: s.weighins.some((w) => w.date === today), jab: isJab && !h.jab, travel: cal && cal.travel && !trained,
     weekCount: s.sessions.filter((x) => x.date >= weekStart(today)).length,
     missedYesterday: dowOf(yest) !== 0 && !s.sessions.some((x) => x.date === yest) && s.sessions.length > 0,
@@ -1873,6 +2371,20 @@ export default function App() {
   useEffect(() => { window.scrollTo(0, 0); }, [tab, s.active ? s.active.idx : -1, s.active ? s.active.phase : ""]);
 
   if (!loaded) return <div className="sh" style={{ display: "grid", placeItems: "center" }}><style>{css}</style><div className="sub">Loading your log…</div></div>;
+
+  if (!s.setupDone) {
+    return (
+      <div className="sh" style={{ paddingBottom: 0 }}>
+        <style>{css}</style>
+        <Setup onDone={({ plan, profile, weighins }) => setS((o) => ({
+          ...o, setupDone: true, plan, weighins,
+          sessions: [], habits: {}, chat: [], calendar: null, shuffles: {},
+          profile: { ...o.profile, ...profile },
+          whys: [],
+        }))} />
+      </div>
+    );
+  }
 
   const tabs = [["today", "Today", Sunrise], ["train", "Train", Dumbbell], ["progress", "Progress", TrendingUp], ["library", "Library", BookOpen], ["coach", "Coach", MessageCircle]];
   return (

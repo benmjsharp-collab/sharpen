@@ -60,13 +60,21 @@ The app nudges you if it's been more than a fortnight since the last backup.
 
 **Progress** — weight chart against your 95 kg goal, strength numbers, weekly protein and water averages, session history, and a copy-out for your Google Sheet.
 
-**Library** — every exercise and stretch, animated, with cues. Plus **"Something's tight — what do I stretch?"**: tap the areas that are complaining and it builds the routine that reaches them.
+**Library** — 100 exercises and stretches, animated, with cues. Plus **"Something's tight — what do I stretch?"**: tap the areas that are complaining and it builds the routine that reaches them.
 
 **Coach** — your plan settings, your reasons, what the training is doing for your heart, blood sugar, back and circulation, travel days, a calendar reminders file, offline answers to the common questions, and backups.
 
+## Your kit decides your programme
+
+At setup you tick what you can get your hands on — about 30 items, from a full commercial gym down to nothing at all. Every session is then built from movement patterns (squat, hinge, push, pull, and so on) and filled with the best exercise your equipment supports.
+
+Tick a cable machine and vertical pull becomes a lat pulldown. Tick a pull-up bar and it's chin-ups. Tick nothing and you get a bodyweight programme that still balances push against pull. If a kit can't pull at all, the split changes to full-body days rather than handing you an "Upper Pull" day of press-ups.
+
 ## The plan is yours to change
 
-**Coach → Change my plan.** Pick the days you can lift, how long you've got, whether cardio and stretching are folded into each session or get their own day, whether you want a walk on rest days, and whether to track body weight at all. The week rebuilds itself and your logged history stays exactly where it is.
+**Coach → Change my plan**, any time. Days you can lift, what time you train, how long you've got, your equipment, whether cardio and stretching are folded into each session or get their own day, whether you want a walk on rest days, and whether to track body weight at all. Go from five days to three and back again — the week rebuilds itself and your logged history stays exactly where it is.
+
+**Reshuffle** on the Train screen re-picks a different exercise for every slot, so the same session comes out a different way. It stays within a quality band, so a reshuffle gives you a genuine alternative rather than a worse workout.
 
 ## How it picks your weights
 
@@ -78,6 +86,8 @@ It remembers what you actually lifted and works from that, not from a plan on pa
 | 11–20 days | Exactly where you left off |
 | 3–6 weeks | 10% lighter |
 | 6 weeks or more | 20% lighter, to rebuild the movement first |
+
+Nothing ships with a starting weight. The first time you log a lift it asks you to pick one, and from then on it works from what you actually lifted.
 
 ## Reminders
 
