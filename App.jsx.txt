@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceL
 import {
   Sunrise, Dumbbell, TrendingUp, BookOpen, MessageCircle, Check, Plus, Minus, ChevronLeft,
   ChevronRight, X, CalendarDays, Droplets, Footprints, Armchair, Moon, Send, Timer, Heart, Egg, Syringe, Copy,
-  Download, Upload, Shuffle
+  Download, Upload, Shuffle, Repeat
 } from "lucide-react";
 
 /* ---------- palette & helpers ---------- */
@@ -71,6 +71,7 @@ const POSES = {
   pulldown: { a: { ...ST, e: [56, 14], w: [58, 2] }, b: { ...ST, e: [44, 40], w: [52, 33] }, imp: "band", anchor: [58, -8] },
   facepull: { a: { ...ST, e: [64, 29], w: [78, 27] }, b: { ...ST, e: [40, 27], w: [52, 19] }, imp: "band", anchor: [98, 26] },
   curl: { a: { ...ST, e: [51, 41], w: [53, 55] }, b: { ...ST, e: [51, 41], w: [60, 30] }, imp: "bar" },
+  cablecurl: { a: { ...ST, e: [51, 41], w: [53, 55] }, b: { ...ST, e: [51, 41], w: [60, 30] }, imp: "cable", anchor: [68, 92] },
   ohtri: { a: { ...ST, e: [55, 6], w: [46, 18] }, b: { ...ST, e: [55, 6], w: [57, -6] }, imp: "db" },
   legext: {
     a: { h: [38, 22], s: [38, 33], p: [42, 58], k: [58, 58], a: [59, 84], e: [42, 46], w: [48, 58] },
@@ -300,11 +301,158 @@ const POSES = {
     b: { h: [74, 36], s: [72, 47], p: [70, 72], k: [44, 72], a: [44, 93], e: [66, 60], w: [52, 64] },
     props: ["wall"],
   },
+  /* ---- kettlebell ---- */
+  kbsnatch: {
+    a: { ...HINGE, e: [58, 58], w: [50, 72] },
+    b: { ...ST, e: [52, 16], w: [52, 2] }, imp: "kb",
+  },
+  kbclean: {
+    a: { ...HINGE, e: [58, 58], w: [50, 72] },
+    b: { ...ST, e: [58, 40], w: [55, 31] }, imp: "kb",
+  },
+  kbrack: { a: { ...ST, e: [58, 40], w: [55, 31] }, b: { ...ST, e: [58, 40], w: [55, 31] }, imp: "kb" },
+  kbpress: { a: { ...ST, e: [58, 40], w: [55, 31] }, b: { ...ST, e: [53, 16], w: [52, 4] }, imp: "kb" },
+  kbbottomsup: { a: { ...ST, e: [58, 42], w: [56, 32] }, b: { ...ST, e: [54, 18], w: [53, 7] }, imp: "kbup" },
+  kbtgu: {
+    a: { h: [16, 86], s: [26, 88], m: [44, 88], p: [60, 88], k: [70, 74], a: [80, 88], k2: [70, 90], a2: [90, 90], e: [28, 70], w: [30, 54], e2: [34, 92], w2: [46, 92] },
+    b: { h: [24, 62], s: [32, 68], m: [46, 78], p: [60, 86], k: [66, 68], a: [76, 86], k2: [70, 90], a2: [90, 90], e: [36, 52], w: [38, 36], e2: [26, 80], w2: [20, 92] },
+    imp: "kb",
+  },
+  kbwindmill: {
+    a: { h: [48, 18], s: [48, 29], p: [50, 56], k: [44, 74], a: [42, 93], k2: [56, 74], a2: [58, 93], e: [54, 15], w: [56, 2], e2: [44, 42], w2: [42, 54] },
+    b: { h: [64, 32], s: [58, 40], p: [46, 58], k: [42, 75], a: [40, 93], k2: [58, 74], a2: [60, 93], e: [64, 24], w: [70, 10], e2: [50, 58], w2: [44, 76] },
+    imp: "kb",
+  },
+  kbhalo: {
+    front: true,
+    a: { ...FR, e: [38, 28], w: [46, 18], e2: [62, 28], w2: [54, 18] },
+    b: { ...FR, e: [38, 20], w: [46, 30], e2: [62, 20], w2: [54, 30] },
+    imp: "kb2",
+  },
+  kbsidebend: {
+    front: true,
+    a: { ...FR, e: [62, 40], w: [63, 54] },
+    b: { h: [44, 18], s: [46, 29], m: [48, 42], p: [50, 54], k: [46, 73], a: [45, 93], k2: [54, 73], a2: [55, 93], e: [64, 44], w: [66, 62], e2: [38, 36], w2: [36, 24] },
+    imp: "kb",
+  },
+  kbrenegade: {
+    a: { h: [80, 62], s: [72, 66], m: [58, 70], p: [44, 74], k: [30, 82], a: [16, 90], f: [14, 94], e: [72, 80], w: [72, 92], e2: [70, 78], w2: [70, 92] },
+    b: { h: [80, 58], s: [72, 62], m: [58, 68], p: [44, 74], k: [30, 82], a: [16, 90], f: [14, 94], e: [78, 68], w: [72, 92], e2: [70, 74], w2: [70, 92] },
+    imp: "kbfloor",
+  },
+  kbfig8: {
+    a: { ...HINGE, e: [56, 60], w: [46, 74] },
+    b: { ...HINGE, e: [50, 58], w: [58, 74] }, imp: "kb",
+  },
+  kbwaiter: {
+    a: { ...ST, k: [55, 73], a: [58, 93], k2: [46, 73], a2: [42, 93], e: [54, 18], w: [53, 4], e2: [46, 40], w2: [44, 53] },
+    b: { ...ST, k: [46, 73], a: [42, 93], k2: [55, 73], a2: [58, 93], e: [54, 18], w: [53, 4], e2: [46, 40], w2: [44, 53] },
+    imp: "kb",
+  },
+  kbrackcarry: {
+    front: true,
+    a: { ...FR, k: [46, 73], a: [45, 93], k2: [54, 73], a2: [55, 93], e: [40, 40], w: [44, 30], e2: [60, 40], w2: [56, 30] },
+    b: { ...FR, k: [44, 73], a: [42, 93], k2: [56, 73], a2: [58, 93], e: [40, 40], w: [44, 30], e2: [60, 40], w2: [56, 30] },
+    imp: "kb2",
+  },
+
+  /* ---- stretch and mobility ---- */
+  sleeper: {
+    a: { h: [20, 74], s: [32, 78], m: [50, 80], p: [66, 82], k: [80, 70], a: [92, 80], e: [38, 62], w: [54, 60], e2: [40, 88], w2: [56, 84] },
+    b: { h: [20, 74], s: [32, 78], m: [50, 80], p: [66, 82], k: [80, 70], a: [92, 80], e: [38, 66], w: [52, 74], e2: [40, 88], w2: [54, 76] },
+  },
+  wallangel: {
+    front: true,
+    a: { ...FR, e: [32, 38], w: [30, 22], e2: [68, 38], w2: [70, 22] },
+    b: { ...FR, e: [36, 24], w: [40, 8], e2: [64, 24], w2: [60, 8] },
+    props: ["wallback"],
+  },
+  thoracicrot: {
+    a: { h: [20, 72], s: [32, 76], m: [50, 80], p: [66, 84], k: [76, 68], a: [88, 78], e: [44, 66], w: [58, 64], e2: [42, 84], w2: [56, 80] },
+    b: { h: [22, 76], s: [34, 82], m: [50, 82], p: [66, 84], k: [76, 68], a: [88, 78], e: [30, 66], w: [16, 72], e2: [42, 84], w2: [56, 80] },
+  },
+  supinetwist: {
+    a: { h: [14, 86], s: [26, 88], m: [44, 88], p: [60, 88], k: [66, 74], a: [78, 82], e: [24, 74], w: [22, 60], e2: [24, 94], w2: [40, 96] },
+    b: { h: [14, 86], s: [26, 88], m: [44, 88], p: [58, 92], k: [64, 78], a: [78, 88], e: [24, 74], w: [22, 60], e2: [26, 96], w2: [42, 96] },
+  },
+  kneetochest: {
+    a: { h: [14, 86], s: [24, 88], p: [46, 88], k: [66, 86], a: [86, 88], k2: [60, 74], a2: [74, 82], e: [28, 80], w: [46, 76] },
+    b: { h: [16, 84], s: [26, 86], p: [46, 88], k: [66, 86], a: [86, 88], k2: [52, 66], a2: [66, 74], e: [30, 76], w: [44, 68] },
+  },
+  pigeon: {
+    a: { h: [26, 52], s: [30, 62], m: [38, 74], p: [48, 84], k: [62, 78], a: [74, 88], k2: [46, 92], a2: [88, 92], f2: [92, 90], e: [30, 76], w: [26, 92] },
+    b: { h: [34, 72], s: [34, 80], m: [42, 86], p: [50, 88], k: [62, 80], a: [74, 90], k2: [48, 92], a2: [90, 92], f2: [94, 90], e: [34, 88], w: [24, 92] },
+  },
+  nineninety: {
+    a: { h: [42, 46], s: [42, 57], m: [44, 72], p: [46, 86], k: [66, 82], a: [72, 66], k2: [30, 86], a2: [22, 70], e: [40, 72], w: [34, 86] },
+    b: { h: [42, 46], s: [42, 57], m: [44, 72], p: [46, 86], k: [70, 80], a: [62, 64], k2: [26, 82], a2: [34, 66], e: [40, 72], w: [34, 86] },
+  },
+  butterfly: {
+    front: true,
+    a: { h: [50, 40], s: [50, 51], m: [50, 66], p: [50, 82], k: [26, 84], a: [42, 92], k2: [74, 84], a2: [58, 92], e: [38, 66], w: [30, 82], e2: [62, 66], w2: [70, 82] },
+    b: { h: [50, 42], s: [50, 53], m: [50, 68], p: [50, 84], k: [24, 90], a: [42, 93], k2: [76, 90], a2: [58, 93], e: [38, 68], w: [30, 88], e2: [62, 68], w2: [70, 88] },
+  },
+  cossack: {
+    front: true,
+    a: { h: [50, 24], s: [50, 35], m: [50, 48], p: [50, 62], k: [30, 76], a: [20, 93], k2: [70, 76], a2: [80, 93], e: [42, 46], w: [44, 58], e2: [58, 46], w2: [56, 58] },
+    b: { h: [30, 40], s: [30, 51], m: [30, 62], p: [30, 74], k: [24, 84], a: [18, 93], k2: [58, 88], a2: [84, 92], f2: [88, 90], e: [34, 62], w: [42, 70], e2: [30, 62], w2: [38, 72] },
+  },
+  worldsgreatest: {
+    a: { h: [26, 54], s: [32, 62], m: [42, 72], p: [52, 82], k: [40, 90], a: [24, 92], k2: [66, 72], a2: [72, 92], e: [32, 76], w: [30, 92], e2: [36, 74], w2: [44, 92] },
+    b: { h: [30, 40], s: [34, 52], m: [42, 68], p: [52, 82], k: [40, 90], a: [24, 92], k2: [66, 72], a2: [72, 92], e: [26, 38], w: [20, 24], e2: [36, 74], w2: [44, 92] },
+  },
+  toestretch: {
+    a: { h: [40, 40], s: [42, 51], m: [46, 64], p: [50, 78], k: [66, 82], a: [78, 90], f: [84, 84], e: [44, 66], w: [46, 78] },
+    b: { h: [42, 46], s: [44, 57], m: [48, 70], p: [52, 84], k: [68, 86], a: [80, 92], f: [86, 86], e: [46, 72], w: [48, 84] },
+  },
+  wriststretch: {
+    a: { h: [40, 44], s: [42, 55], m: [48, 68], p: [54, 82], k: [68, 86], a: [80, 90], e: [34, 70], w: [26, 92] },
+    b: { h: [44, 48], s: [46, 59], m: [52, 72], p: [58, 84], k: [70, 88], a: [82, 90], e: [38, 74], w: [28, 92] },
+  },
+  spinalroll: {
+    a: { ...ST, e: [50, 41], w: [50, 54] },
+    b: { h: [40, 68], s: [42, 62], m: [46, 58], p: [50, 54], k: [52, 73], a: [52, 93], e: [38, 78], w: [38, 90] },
+  },
+  downdog: {
+    a: { h: [74, 62], s: [68, 58], m: [54, 62], p: [40, 66], k: [30, 78], a: [18, 90], f: [15, 93], e: [78, 72], w: [84, 90] },
+    b: { h: [78, 74], s: [70, 68], m: [56, 68], p: [40, 66], k: [30, 80], a: [18, 92], f: [15, 94], e: [80, 80], w: [84, 92] },
+  },
+  threadneedle: {
+    a: { ...QUAD },
+    b: { h: [74, 86], s: [70, 78], m: [56, 70], p: [42, 66], k: [42, 92], a: [22, 92], f: [19, 94], e: [64, 88], w: [50, 92] },
+  },
+  couchstretch: {
+    a: { h: [40, 26], s: [40, 37], m: [42, 50], p: [44, 62], k: [58, 66], a: [60, 92], k2: [38, 90], a2: [66, 78], f2: [70, 74], e: [38, 50], w: [40, 62] },
+    b: { h: [38, 20], s: [38, 31], m: [40, 46], p: [42, 60], k: [56, 64], a: [58, 92], k2: [36, 90], a2: [62, 70], f2: [66, 66], e: [40, 42], w: [42, 54] },
+  },
+  standingham: {
+    a: { ...ST, k: [44, 72], a: [38, 92], k2: [56, 74], a2: [62, 92], e: [50, 41], w: [50, 54] },
+    b: { h: [36, 42], s: [40, 48], m: [46, 54], p: [52, 60], k: [44, 70], a: [30, 84], f: [26, 80], k2: [60, 74], a2: [66, 92], e: [40, 60], w: [34, 74] },
+  },
+  frogstretch: {
+    a: { h: [78, 74], s: [70, 72], m: [56, 74], p: [42, 76], k: [40, 92], a: [20, 92], k2: [44, 92], a2: [20, 94], e: [72, 82], w: [74, 92] },
+    b: { h: [84, 78], s: [76, 76], m: [60, 78], p: [46, 80], k: [44, 92], a: [22, 92], k2: [48, 92], a2: [24, 94], e: [78, 86], w: [80, 92] },
+  },
+  anklerock: {
+    a: { h: [40, 30], s: [40, 41], m: [42, 54], p: [44, 66], k: [62, 68], a: [64, 92], k2: [38, 90], a2: [22, 92], f2: [19, 94], e: [50, 56], w: [58, 64] },
+    b: { h: [48, 34], s: [48, 45], m: [50, 58], p: [52, 70], k: [68, 70], a: [64, 92], k2: [44, 90], a2: [26, 92], f2: [23, 94], e: [58, 60], w: [64, 68] },
+  },
+  neckrot: { front: true, a: FR, b: { ...FR, h: [57, 17] } },
+  doorwaychest: {
+    front: true,
+    a: { ...FR, e: [34, 32], w: [28, 20], e2: [66, 32], w2: [72, 20] },
+    b: { ...up(FR, 0), s: [50, 28], e: [32, 30], w: [24, 18], e2: [68, 30], w2: [76, 18] },
+    props: ["doorframe"],
+  },
+  pelvictilt: {
+    a: { h: [14, 87], s: [24, 89], m: [36, 90], p: [48, 90], k: [62, 74], a: [70, 93], e: [28, 92], w: [40, 93] },
+    b: { h: [14, 87], s: [24, 89], m: [36, 86], p: [48, 84], k: [62, 72], a: [70, 93], e: [28, 92], w: [40, 93] },
+  },
 };
 
 const pts = (a) => a.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
-function fill(f, front) {
-  const g = { ...f };
+function fill(f, front, base) {
+  const g = { ...(base || ST), ...f };
   g.k2 = g.k2 || g.k; g.a2 = g.a2 || g.a; g.e2 = g.e2 || g.e; g.w2 = g.w2 || g.w;
   g.m = g.m || [(g.s[0] + g.p[0]) / 2, (g.s[1] + g.p[1]) / 2];
   g.f = g.f || (front ? [g.a[0] - 5, g.a[1]] : [g.a[0] + 6, g.a[1]]);
@@ -327,10 +475,12 @@ const off = (q, dx, dy = 0) => [q[0] + dx, q[1] + dy];
 function Figure({ pose, imp, play = true, bg = C.panel, label }) {
   const P = POSES[pose] || POSES.stand;
   const front = !!P.front;
-  const A = fill(play && !REDUCED ? P.a : P.b, front), B = fill(P.b, front);
+  const A = fill(play && !REDUCED ? P.a : P.b, front, P.b), B = fill(P.b, front, P.a);
   const on = play && !REDUCED;
   const I = imp === undefined ? P.imp : imp;
   const props = P.props || [];
+  // A cable or band on a pose with no anchor used to crash the screen. Fall back instead.
+  const ANCH = P.anchor || [50, 4];
   const sw = 4.2, col = C.paper;
   const L = front
     ? {
@@ -354,6 +504,8 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
       {props.includes("bike") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="34" y1="46" x2="46" y2="46" /><line x1="40" y1="47" x2="52" y2="78" /><line x1="52" y1="78" x2="71" y2="44" /><line x1="68" y1="42" x2="77" y2="39" /><circle cx="52" cy="78" r="9" /><line x1="44" y1="93" x2="64" y2="93" /></g>}
       {props.includes("rower") && <g stroke={C.line} strokeWidth="3" strokeLinecap="round" fill="none"><line x1="8" y1="88" x2="90" y2="88" /><line x1="28" y1="84" x2="42" y2="84" strokeWidth="5" /><circle cx="84" cy="68" r="9" /><line x1="66" y1="87" x2="70" y2="75" /></g>}
       {props.includes("wall") && <rect x="86" y="6" width="5" height="88" fill={C.line} />}
+      {props.includes("wallback") && <rect x="14" y="-8" width="72" height="102" rx="3" fill="none" stroke={C.line} strokeWidth="2.5" strokeDasharray="5 4" />}
+      {props.includes("doorframe") && <g fill={C.line}><rect x="8" y="2" width="4" height="92" /><rect x="88" y="2" width="4" height="92" /></g>}
       {props.includes("highbar") && <line x1="18" y1="8" x2="82" y2="8" stroke={C.line} strokeWidth="4" strokeLinecap="round" />}
       {props.includes("lowbar") && <g stroke={C.line} strokeWidth="3.5" strokeLinecap="round"><line x1="10" y1="40" x2="46" y2="40" /><line x1="14" y1="40" x2="14" y2="93" /><line x1="42" y1="40" x2="42" y2="93" /></g>}
       {props.includes("dipbars") && <g stroke={C.line} strokeWidth="4" strokeLinecap="round"><line x1="26" y1="62" x2="56" y2="62" /><line x1="30" y1="62" x2="30" y2="93" /><line x1="52" y1="62" x2="52" y2="93" /></g>}
@@ -369,7 +521,7 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
       {props.includes("machine") && <g stroke={C.line} strokeWidth="3" fill="none"><rect x="8" y="26" width="18" height="68" rx="3" /></g>}
       {props.includes("abmachine") && <g fill={C.line}><rect x="26" y="60" width="5" height="34" rx="2" /><rect x="69" y="60" width="5" height="34" rx="2" /></g>}
       {props.includes("roller") && <circle cx="31" cy="89" r="5" fill={C.line} />}
-      {I === "band" && <Poly A={[P.anchor, A.w]} B={[P.anchor, B.w]} on={on} stroke={C.sage} strokeWidth="1.6" strokeDasharray="3 2" />}
+      {I === "band" && <Poly A={[ANCH, A.w]} B={[ANCH, B.w]} on={on} stroke={C.sage} strokeWidth="1.6" strokeDasharray="3 2" />}
       {I === "landmine" && <Poly A={[[6, 93], A.w]} B={[[6, 93], B.w]} on={on} stroke={C.mist} strokeWidth="3" />}
       {I === "chain" && <Poly A={[A.w, [84, 68]]} B={[B.w, [84, 68]]} on={on} stroke={C.mist} strokeWidth="1.4" />}
       <g opacity={back}>
@@ -388,14 +540,17 @@ function Figure({ pose, imp, play = true, bg = C.panel, label }) {
       {I === "db" && <Poly A={[off(A.w, -4), off(A.w, 4)]} B={[off(B.w, -4), off(B.w, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
       {I === "db" && front && <Poly A={[off(A.w2, -4), off(A.w2, 4)]} B={[off(B.w2, -4), off(B.w2, 4)]} on={on} stroke={C.sun} strokeWidth="5.5" />}
       {I === "wheel" && <Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} />}
-      {I === "bar-fixed" && <line x1={(P.anchor || [30, 10])[0] - 9} y1={(P.anchor || [30, 10])[1]} x2={((P.anchor2 || P.anchor) || [70, 10])[0] + 9} y2={(P.anchor || [30, 10])[1]} stroke={C.sun} strokeWidth="4" strokeLinecap="round" />}
-      {I === "cable" && <Poly A={[P.anchor, A.w]} B={[P.anchor, B.w]} on={on} stroke={C.mist} strokeWidth="1.6" />}
+      {I === "bar-fixed" && <line x1={ANCH[0] - 9} y1={ANCH[1]} x2={(P.anchor2 || ANCH)[0] + 9} y2={ANCH[1]} stroke={C.sun} strokeWidth="4" strokeLinecap="round" />}
+      {I === "cable" && <Poly A={[ANCH, A.w]} B={[ANCH, B.w]} on={on} stroke={C.mist} strokeWidth="1.6" />}
       {I === "cable" && <Poly A={[off(A.w, -4, 0), off(A.w, 4, 0)]} B={[off(B.w, -4, 0), off(B.w, 4, 0)]} on={on} stroke={C.sun} strokeWidth="4.5" />}
       {I === "twocable" && <><Poly A={[[4, 20], A.w]} B={[[4, 20], B.w]} on={on} stroke={C.mist} strokeWidth="1.6" /><Poly A={[[96, 20], A.w2]} B={[[96, 20], B.w2]} on={on} stroke={C.mist} strokeWidth="1.6" /><Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} /><Dot A={A.w2} B={B.w2} on={on} r={4} fill={C.sun} /></>}
       {I === "ball" && <Dot A={A.w} B={B.w} on={on} r={6} fill={C.sun} />}
       {I === "ropes" && <><Poly A={[A.w, [6, 60], [2, 93]]} B={[B.w, [6, 66], [2, 93]]} on={on} stroke={C.sun} strokeWidth="2.4" /><Poly A={[A.w2, [94, 66], [98, 93]]} B={[B.w2, [94, 60], [98, 93]]} on={on} stroke={C.sun} strokeWidth="2.4" /></>}
       {I === "handles" && <><Dot A={A.w} B={B.w} on={on} r={4} fill={C.sun} /><Dot A={off(A.w, 0, 10)} B={off(B.w, 0, 10)} on={on} r={4} fill={C.sun} /></>}
       {I === "ez" && <Poly A={[off(A.w, -5, 1), off(A.w, -1, -2), off(A.w, 3, 1), off(A.w, 7, -2)]} B={[off(B.w, -5, 1), off(B.w, -1, -2), off(B.w, 3, 1), off(B.w, 7, -2)]} on={on} stroke={C.sun} strokeWidth="3.4" />}
+      {I === "kbup" && <><Dot A={off(A.w, 0, -5)} B={off(B.w, 0, -5)} on={on} r={5.2} fill={C.sun} /><Poly A={[off(A.w, -3, 0), off(A.w, 3, 0)]} B={[off(B.w, -3, 0), off(B.w, 3, 0)]} on={on} stroke={C.sun} strokeWidth="2.4" /></>}
+      {I === "kb2" && <><Dot A={off(A.w, 0, 5)} B={off(B.w, 0, 5)} on={on} r={5} fill={C.sun} /><Dot A={off(A.w2, 0, 5)} B={off(B.w2, 0, 5)} on={on} r={5} fill={C.sun} /></>}
+      {I === "kbfloor" && <><Dot A={off(A.w, 0, 3)} B={off(B.w, 0, 3)} on={on} r={5} fill={C.sun} /><Dot A={[70, 92]} B={[70, 92]} on={on} r={5} fill={C.sun} /></>}
       {I === "kb" && <Dot A={off(A.w, 0, 5)} B={off(B.w, 0, 5)} on={on} r={5.2} fill={C.sun} />}
       {I === "pulse" && (
         <circle cx={A.p[0] + 4} cy={A.p[1] - 2} r="4" fill="none" stroke={C.sun} strokeWidth="2">
@@ -436,13 +591,15 @@ const PAT = {
      rank - preference when several options are available (higher wins)
    Exercise ids are permanent: logged sets reference them. Never rename one. */
 const Ex = (name, pose, pat, eq, rank, o = {}) => ({ name, pose, pat, eq, rank, g: "strength", ...o });
+// Stretches carry the body parts they reach, so they can be browsed and prescribed by area.
+const St = (name, pose, parts, cues, o = {}) => ({ name, pose, parts, cues, g: "stretch", ...o });
+const BODY_PARTS = ["neck", "shoulders", "chest", "upper back", "lower back", "hips", "glutes", "hamstrings", "quads", "groin", "calves", "ankles", "wrists"];
 const EX = {
   /* --- warm-up: the movement block --- */
   bike: { name: "Easy bike", pose: "bike", g: "warm", cues: ["Easy spin, you could hold a chat", "Let the heart rate creep up, no rush"] },
   hops: { name: "Lymphatic hopping", pose: "hop", g: "warm", cues: ["Small, soft bounces on the balls of the feet", "Loose shoulders, easy breathing"] },
   waves: { name: "Body waves", pose: "wave", g: "warm", cues: ["Roll through chest, belly, then hips", "Slow and smooth"] },
   armswing: { name: "Arm swings", pose: "armswing", g: "warm", cues: ["Big relaxed swings up and down", "Then circles forward and back"] },
-  twist: { name: "Trunk twists", pose: "twist", g: "warm", cues: ["Feet planted, turn from the ribs", "Let the arms follow"] },
   deadarms: { name: "Dead arms", pose: "deadarms", g: "warm", cues: ["Shake the arms out, totally loose"] },
   golf: { name: "Golf swings", pose: "twist", g: "warm", cues: ["Slow practice swings both ways", "Rotate through the hips"] },
   march: { name: "Marches", pose: "march", g: "warm", cues: ["Knee to hip height", "Opposite arm drives"] },
@@ -543,7 +700,7 @@ const EX = {
   bbcurl: Ex("Barbell curl", "curl", "bi", ["bb"], 76, { inc: 2.5, imp: "bar", cues: ["Elbows pinned, no hip swing", "Lower under control"] }),
   dbcurl: Ex("DB curl", "curl", "bi", ["db"], 74, { inc: 2, imp: "db", cues: ["Elbows at your sides", "Turn the pinky up at the top"] }),
   hammer: Ex("Hammer curl", "curl", "bi", ["db"], 72, { inc: 2, imp: "db", cues: ["Palms facing each other the whole way", "No swinging"] }),
-  cablecurl: Ex("Cable curl", "curl", "bi", ["cable"], 70, { inc: 2.5, imp: "cable", cues: ["Constant tension, elbows still", "Squeeze at the top"] }),
+  cablecurl: Ex("Cable curl", "cablecurl", "bi", ["cable"], 70, { inc: 2.5, imp: "cable", cues: ["Constant tension, elbows still", "Squeeze at the top"] }),
   bandcurl: Ex("Band curl", "curl", "bi", ["bands"], 42, { bw: true, cues: ["Stand on the band, elbows pinned", "Slow on the way down"] }),
 
   /* --- triceps --- */
@@ -580,6 +737,36 @@ const EX = {
   sledpush: Ex("Sled push", "sled", "carry", ["sled"], 70, { inc: 5, note: "metres", cues: ["Low body angle, arms locked", "Short, hard steps"] }),
   ropes: Ex("Battle ropes", "ropes", "carry", ["ropesk"], 60, { bw: true, note: "seconds", cues: ["Athletic stance, soft knees", "Fast alternating waves, breathe"] }),
 
+  /* --- kettlebell --- */
+  kbswingsingle: Ex("Single-arm swing", "swing", "hinge", ["kb"], 64, { inc: 4, imp: "kb", cues: ["Hip snap, free arm out for balance", "Don't let the shoulder round forward at the bottom"] }),
+  kbswingalt: Ex("Alternating swing", "swing", "hinge", ["kb"], 60, { inc: 4, imp: "kb", cues: ["Swap hands at the top of the float", "Calm hands, the hips do the work"] }),
+  kbclean: Ex("Kettlebell clean", "kbclean", "hinge", ["kb"], 66, { inc: 4, cues: ["Guide the bell round, don't let it flip onto the wrist", "Finish with it resting in the rack, elbow tight to the ribs"] }),
+  kbsnatch: Ex("Kettlebell snatch", "kbsnatch", "hinge", ["kb"], 62, { inc: 4, note: "each side", cues: ["One movement from the hip snap to overhead", "Punch the hand through at the top so the bell lands soft"] }),
+  kbhighpull: Ex("Kettlebell high pull", "kbclean", "hpull", ["kb"], 58, { inc: 4, cues: ["Swing to chest height, then pull the elbow back and high", "The bell should feel weightless when you pull"] }),
+  kbsdlhp: Ex("Sumo deadlift high pull", "kbclean", "hinge", ["kb"], 56, { inc: 4, cues: ["Wide stance, bell between the feet", "Stand and pull to the collarbone in one move"] }),
+  kbpress: Ex("Kettlebell press", "kbpress", "vpush", ["kb"], 74, { inc: 4, note: "each side", cues: ["Start in the rack, elbow down", "Press up and slightly back, lock it out overhead"] }),
+  kbpushpress: Ex("Kettlebell push press", "kbpress", "vpush", ["kb"], 68, { inc: 4, note: "each side", cues: ["Short dip from the legs, then drive", "Catch it locked out, lower under control"] }),
+  kbbottomsup: Ex("Bottoms-up press", "kbbottomsup", "vpush", ["kb"], 54, { inc: 2, note: "each side", cues: ["Bell upside down, crush the handle", "Go lighter than you think, this is a grip and shoulder test"] }),
+  kbfrontsquat: Ex("Kettlebell front squat", "goblet", "squat", ["kb"], 64, { inc: 4, imp: "kb", cues: ["Bells in the rack, elbows tight", "Sit between the heels, chest tall"] }),
+  kbthruster: Ex("Kettlebell thruster", "kbpress", "vpush", ["kb"], 60, { inc: 4, cues: ["Squat, then drive straight into the press", "One continuous movement, breathe at the top"] }),
+  kbrow: Ex("Kettlebell row", "row", "hpull", ["kb"], 70, { inc: 4, imp: "kb", note: "each side", cues: ["Hinge to about 45°, back flat", "Pull the bell to your hip, squeeze the back"] }),
+  kbrenegade: Ex("Renegade row", "kbrenegade", "hpull", ["kb"], 58, { inc: 4, note: "each side", cues: ["Wide feet, hips square to the floor", "Row one bell without letting the hips twist"] }),
+  kbfloorpress: Ex("Kettlebell floor press", "bench", "hpush", ["kb"], 56, { inc: 4, imp: "kb", cues: ["Upper arms rest on the floor at the bottom", "Press straight up, wrist stacked over the elbow"] }),
+  kbpullover: Ex("Kettlebell pullover", "pullover", "vpull", ["kb"], 52, { inc: 4, imp: "kb", cues: ["On a bench, or flat on the floor", "Ribs down, don't arch the back", "Reach back only as far as the shoulders allow"] }),
+  kbtgu: Ex("Turkish get-up", "kbtgu", "core", ["kb"], 72, { inc: 4, lo: 3, hi: 5, note: "each side", cues: ["Eyes on the bell the whole way up and down", "Five slow reps a side is plenty", "Go light until the pattern is smooth"] }),
+  kbwindmill: Ex("Kettlebell windmill", "kbwindmill", "core", ["kb"], 62, { inc: 4, note: "each side", cues: ["Back foot turned out, weight in the back hip", "Push the hip out as the hand travels down the front leg"] }),
+  kbhalo: Ex("Kettlebell halo", "kbhalo", "delt", ["kb"], 56, { inc: 2, cues: ["Circle the bell close around the head", "Ribs down, only the arms move"] }),
+  kbsidebend: Ex("Kettlebell side bend", "kbsidebend", "core", ["kb"], 52, { inc: 4, note: "each side", cues: ["One bell at your side, the other hand behind your head", "Bend sideways only, no twisting"] }),
+  kbgobletlunge: Ex("Goblet reverse lunge", "lunge", "lunge", ["kb"], 70, { inc: 4, imp: "kb", note: "each leg", cues: ["Bell at the chest, elbows in", "Step back long, drive through the front heel"] }),
+  kbslrdl: Ex("Kettlebell single-leg deadlift", "slrdl", "hinge", ["kb"], 58, { inc: 4, imp: "kb", note: "each side", cues: ["Back leg straight behind, hips level", "Bell travels straight down, no rotation"] }),
+  kbfig8: Ex("Figure 8", "kbfig8", "core", ["kb"], 50, { inc: 4, cues: ["Hinge and pass the bell between the legs in a figure 8", "Flat back, head up, smooth hand-offs"] }),
+  kbhipthrust: Ex("Kettlebell hip thrust", "hipthrust", "glute", ["kb"], 66, { inc: 4, imp: "kb", cues: ["Shoulders on a bench or the floor, bell across the hips", "Chin tucked, squeeze hard at the top"] }),
+  kbcurl: Ex("Kettlebell curl", "curl", "bi", ["kb"], 62, { inc: 2, imp: "kb", cues: ["Elbows pinned at your sides", "The offset weight makes this harder than it looks"] }),
+  kbcalf: Ex("Kettlebell calf raise", "calf", "calf", ["kb"], 62, { inc: 4, imp: "kb", cues: ["Bell in one hand, other hand on a wall", "Full stretch at the bottom, pause high"] }),
+  kbsuitcase: Ex("Suitcase carry", "carry", "carry", ["kb"], 74, { inc: 4, imp: "kb", note: "metres, one side then the other", cues: ["One bell only, walk tall", "Do not let it pull you sideways"] }),
+  kbrackcarry: Ex("Rack carry", "kbrackcarry", "carry", ["kb"], 68, { inc: 4, note: "metres", cues: ["Bells in the rack, elbows tight to the ribs", "Breathe shallow and keep walking"] }),
+  kbwaiter: Ex("Overhead carry", "kbwaiter", "carry", ["kb"], 62, { inc: 4, note: "metres, each side", cues: ["Arm locked out, bicep by the ear", "Ribs down, do not arch the back"] }),
+
   /* --- cardio --- */
   zone2: { name: "Zone 2 bike", pose: "bike", g: "cardio", eq: ["bike"], rank: 80, cues: ["Conversational pace: you can talk, not sing", "Roughly 110–125 bpm for you"] },
   rower: { name: "Rower", pose: "rower", g: "cardio", eq: ["rowerm"], rank: 78, cues: ["Legs, then lean, then arms", "Reverse on the way back"] },
@@ -587,26 +774,48 @@ const EX = {
   elliptical: { name: "Elliptical", pose: "elliptical", g: "cardio", eq: ["elliptical"], rank: 70, cues: ["Steady rhythm, use the arms", "Easy enough to talk"] },
   walk: { name: "Brisk walk", pose: "walk", g: "cardio", eq: [], rank: 50, cues: ["Breathing a bit harder than normal", "Outside if you can, daylight helps sleep"] },
 
-  /* --- stretches --- */
-  hipflex: { name: "Hip flexor stretch", pose: "hipflex", g: "stretch", cues: ["Tuck the tailbone, squeeze the back glute", "Shift forward gently, reach the arm up"] },
-  hamstring: { name: "Seated hamstring stretch", pose: "hamstring", g: "stretch", cues: ["Sit tall, then hinge from the hips", "Reach for the shins, not the toes"] },
-  catcow: { name: "Cat-cow", pose: "catcow", g: "stretch", cues: ["Round the back up, then let it sag", "Move with the breath"] },
-  childpose: { name: "Child's pose", pose: "childpose", g: "stretch", cues: ["Sit back to the heels", "Arms long, breathe into the lower back"] },
-  roller: { name: "Foam roller extension", pose: "roller", g: "stretch", cues: ["Roller across the upper back", "Hands behind head, extend over, shift an inch, repeat"] },
-  chest: { name: "Chest opener", pose: "chest", g: "stretch", cues: ["Hands clasped behind you", "Lift the chest, squeeze the shoulder blades"] },
-  squathold: { name: "Deep squat hold", pose: "squathold", g: "stretch", cues: ["Sit down between the heels", "Hold something if you need to, breathe"] },
-  hipswing: { name: "Hip swings", pose: "hipswing", g: "stretch", cues: ["Hold the rack, swing one leg forward and back", "Loose and easy, 10–15 each side"] },
-  figure4: { name: "Figure-4 glute stretch", pose: "figure4", g: "stretch", cues: ["Ankle over the opposite knee", "Pull that thigh toward you, 60 s each side"] },
-  calfstretch: { name: "Calf stretch", pose: "calfstretch", g: "stretch", cues: ["Hands on the wall, back heel down", "Lean in until you feel the calf, 45 s each side"] },
-  quadstretch: { name: "Standing quad stretch", pose: "quadstretch", g: "stretch", cues: ["Hold something for balance", "Heel to the backside, knees together, tuck the tailbone"] },
-  neckside: { name: "Neck side stretch", pose: "neckside", g: "stretch", cues: ["Ear toward the shoulder, other shoulder down", "Rest a hand on your head, no pulling"] },
-  crossbody: { name: "Cross-body shoulder stretch", pose: "crossbody", g: "stretch", cues: ["Arm straight across the chest", "Hook it with the other arm and draw it in"] },
-  groin: { name: "Wide stance groin stretch", pose: "groin", g: "stretch", cues: ["Feet wide, toes slightly out", "Sink the hips down, chest tall"] },
-
-  /* --- desk reset --- */
-  chintuck: { name: "Chin tucks", pose: "chintuck", g: "desk", cues: ["Slide the head straight back, double chin", "Hold 3 seconds, 10 reps"] },
-  seatedext: { name: "Chair back extension", pose: "seatedext", g: "desk", cues: ["Sit tall, hands behind head", "Lean back over the chair, open the chest"] },
-  pelvic: { name: "Core squeeze", pose: "pelvic", g: "desk", cues: ["Squeeze as if stopping the flow and holding in wind", "Hold 5–10 seconds, relax fully, 10 reps", "Breathe normally, don't clench the glutes"] },
+  /* --- stretch and mobility, tagged by the body parts each one reaches --- */
+  neckside: St("Neck side stretch", "neckside", ["neck"], ["Ear toward the shoulder, other shoulder pulled down", "A hand resting on your head is enough, no pulling"]),
+  neckrot: St("Neck rotation", "neckrot", ["neck"], ["Turn slowly to look over one shoulder", "Chin stays level, stop where it tightens"]),
+  chintuck: St("Chin tucks", "chintuck", ["neck"], ["Slide the head straight back, double chin", "Hold 3 seconds, 10 reps"], { g: "desk" }),
+  crossbody: St("Cross-body shoulder stretch", "crossbody", ["shoulders"], ["Arm straight across the chest", "Hook it with the other arm and draw it in"]),
+  sleeper: St("Sleeper stretch", "sleeper", ["shoulders"], ["Lie on the side you're stretching, elbow at shoulder height", "Press the forearm down gently, stop well before pain"]),
+  wallangel: St("Wall angels", "wallangel", ["shoulders", "upper back"], ["Back, head and arms against the wall", "Slide the arms up and down keeping contact"]),
+  doorwaychest: St("Doorway chest stretch", "doorwaychest", ["chest", "shoulders"], ["Forearms on the frame, elbows at shoulder height", "Step through until the chest opens, breathe"]),
+  chest: St("Chest opener", "chest", ["chest", "shoulders"], ["Hands clasped behind you", "Lift the chest, squeeze the shoulder blades"]),
+  roller: St("Foam roller extension", "roller", ["upper back"], ["Roller across the upper back", "Hands behind head, extend over, shift an inch, repeat"], { eq: ["roller"] }),
+  thoracicrot: St("Open book", "thoracicrot", ["upper back"], ["Side lying, knees stacked and still", "Open the top arm across and follow it with your eyes"]),
+  threadneedle: St("Thread the needle", "threadneedle", ["upper back", "shoulders"], ["On all fours, thread one arm under the other", "Let the shoulder and ear rest down"]),
+  catcow: St("Cat-cow", "catcow", ["upper back", "lower back"], ["Round the back up, then let it sag", "Move with the breath"]),
+  twist: St("Trunk twists", "twist", ["upper back", "lower back"], ["Feet planted, turn from the ribs", "Let the arms follow"], { g: "warm" }),
+  childpose: St("Child's pose", "childpose", ["lower back", "hips"], ["Sit back to the heels", "Arms long, breathe into the lower back"]),
+  kneetochest: St("Knee to chest", "kneetochest", ["lower back", "glutes"], ["Lying down, draw one knee in", "Other leg stays long on the floor"]),
+  supinetwist: St("Supine spinal twist", "supinetwist", ["lower back", "hips"], ["Knees over to one side, shoulders stay down", "Look the other way, breathe and let it settle"]),
+  pelvictilt: St("Pelvic tilts", "pelvictilt", ["lower back"], ["Flatten the lower back into the floor, then release", "Small movement, no effort"]),
+  spinalroll: St("Standing roll down", "spinalroll", ["lower back", "hamstrings"], ["Chin to chest, roll down one bone at a time", "Hang loose, then roll back up the same way"]),
+  seatedext: St("Chair back extension", "seatedext", ["lower back", "chest"], ["Sit tall, hands behind head", "Lean back over the chair, open the chest"], { g: "desk" }),
+  hipflex: St("Hip flexor stretch", "hipflex", ["hips"], ["Tuck the tailbone, squeeze the back glute", "Shift forward gently, reach the arm up"]),
+  couchstretch: St("Couch stretch", "couchstretch", ["hips", "quads"], ["Back foot up on a bench or the couch", "Tuck the tailbone hard, this one is honest"]),
+  pigeon: St("Pigeon stretch", "pigeon", ["hips", "glutes"], ["Front shin across, back leg long behind", "Square the hips, fold forward only as far as is comfortable"]),
+  nineninety: St("90/90 hip switch", "nineninety", ["hips"], ["Both knees bent at right angles, sit tall", "Switch sides slowly without using your hands"]),
+  figure4: St("Figure-4 glute stretch", "figure4", ["glutes", "hips"], ["Ankle over the opposite knee", "Pull that thigh toward you"]),
+  frogstretch: St("Frog stretch", "frogstretch", ["groin", "hips"], ["Knees wide, shins in line with the thighs", "Rock back slowly, never force it"]),
+  butterfly: St("Butterfly", "butterfly", ["groin"], ["Soles together, sit tall", "Let the knees fall, don't push them"]),
+  groin: St("Wide stance groin stretch", "groin", ["groin"], ["Feet wide, toes slightly out", "Sink the hips down, chest tall"]),
+  cossack: St("Cossack squat", "cossack", ["groin", "hips", "ankles"], ["Shift over one bent leg, the other stays straight", "Heels down if you can, hold something for balance"]),
+  hamstring: St("Seated hamstring stretch", "hamstring", ["hamstrings"], ["Sit tall, then hinge from the hips", "Reach for the shins, not the toes"]),
+  standingham: St("Standing hamstring stretch", "standingham", ["hamstrings"], ["Heel out in front, toes up", "Push the hips back, keep the back flat"]),
+  quadstretch: St("Standing quad stretch", "quadstretch", ["quads"], ["Hold something for balance", "Heel to the backside, knees together, tuck the tailbone"]),
+  calfstretch: St("Calf stretch", "calfstretch", ["calves"], ["Hands on the wall, back heel down", "Lean in until you feel the calf"]),
+  anklerock: St("Ankle rocks", "anklerock", ["ankles", "calves"], ["Half kneeling, drive the front knee over the toes", "Heel stays down, rock in and out"]),
+  toestretch: St("Toe stretch", "toestretch", ["ankles"], ["Kneel with the toes tucked under", "Sit back gently, this one wakes the feet up"]),
+  wristrev: St("Reverse wrist stretch", "wriststretch", ["wrists", "shoulders"], ["Backs of the hands on the floor, fingers pointing in", "Very gentle, this one is easy to overdo"]),
+  wriststretch: St("Wrist stretch", "wriststretch", ["wrists"], ["Hands on the floor, fingers pointing back", "Rock back slowly, ease off if it pinches"]),
+  squathold: St("Deep squat hold", "squathold", ["hips", "ankles", "groin"], ["Sit down between the heels", "Hold something if you need to, breathe"]),
+  worldsgreatest: St("World's greatest stretch", "worldsgreatest", ["hips", "upper back", "hamstrings"], ["Deep lunge, elbow down to the instep", "Then rotate and reach the top arm up"]),
+  downdog: St("Downward dog", "downdog", ["hamstrings", "calves", "shoulders"], ["Hips high, long spine", "Pedal the heels one at a time"]),
+  hipswing: St("Hip swings", "hipswing", ["hips", "hamstrings"], ["Hold something, swing one leg forward and back", "Loose and easy, 10–15 each side"]),
+  pelvic: St("Core squeeze", "pelvic", [], ["Squeeze as if stopping the flow and holding in wind", "Hold 5–10 seconds, relax fully, 10 reps", "Breathe normally, don't clench the glutes"], { g: "desk" }),
 };
 
 // Movement block, in Ben's order (from his printed sheet)
@@ -620,19 +829,26 @@ const DOSE = {
   crossbody: "30 s each side", quadstretch: "45 s each side", groin: "60 s", pelvic: "10 slow squeezes",
 };
 // What to do about the bit that hurts. Ordered best-first.
-const TIGHT = [
-  { area: "Lower back", ids: ["catcow", "childpose", "figure4", "hipflex"], note: "Nine times out of ten a stiff lower back is tight hips, not a bad back. Loosen the hips first and move gently \u2014 resting it flat usually makes it worse." },
-  { area: "Hips", ids: ["hipflex", "figure4", "squathold", "groin"], note: "This is the price of long days in the seat and the driver's seat. Hit it after driving, not just at night." },
-  { area: "Hamstrings", ids: ["hamstring", "squathold", "catcow"], note: "Hinge from the hips, not the lower back. If your back rounds, you're stretching the wrong thing." },
-  { area: "Glutes", ids: ["figure4", "squathold", "hipflex"], note: "Deep glute tightness after squats and RDLs is normal. Figure-4 is the one that gets it." },
-  { area: "Quads", ids: ["quadstretch", "hipflex", "squathold"], note: "Tuck the tailbone in the quad stretch or you'll just arch your back and feel nothing." },
-  { area: "Groin", ids: ["groin", "squathold", "figure4"], note: "Go slow here. Groin tissue complains loudly if you force it." },
-  { area: "Calves", ids: ["calfstretch", "squathold", "hipswing"], note: "Tight calves quietly limit how deep you squat. Worth two minutes." },
-  { area: "Chest", ids: ["chest", "crossbody", "roller"], note: "Rounded-forward shoulders come from the desk, not from pressing. Open the chest, don't stretch the shoulder joint hard." },
-  { area: "Shoulders", ids: ["crossbody", "chest", "roller"], note: "If a shoulder is sharp rather than tight, leave it and see a physio." },
-  { area: "Upper back", ids: ["roller", "catcow", "twist", "childpose"], note: "The foam roller extension is the best one you own for this. Shift an inch at a time." },
-  { area: "Neck", ids: ["chintuck", "neckside", "chest"], note: "Neck tightness is usually the head drifting forward over a screen all day. Chin tucks fix the cause." },
-];
+// Every stretch that reaches a given area, and a line on what usually causes tightness there.
+const PART_NOTE = {
+  "lower back": "Nine times out of ten a stiff lower back is tight hips, not a bad back. Loosen the hips first and move gently — resting it flat usually makes it worse.",
+  hips: "This is the price of long days in the seat and the driver's seat. Hit it after driving, not just at night.",
+  hamstrings: "Hinge from the hips, not the lower back. If your back rounds, you're stretching the wrong thing.",
+  glutes: "Deep glute tightness after squats and hinges is normal. Figure-4 and pigeon are the ones that get it.",
+  quads: "Tuck the tailbone or you'll just arch your back and feel nothing.",
+  groin: "Go slow here. Groin tissue complains loudly if you force it.",
+  calves: "Tight calves quietly limit how deep you squat. Worth two minutes.",
+  ankles: "Stiff ankles show up as heels lifting in a squat. Rock, don't bounce.",
+  chest: "Rounded-forward shoulders come from the desk, not from pressing. Open the chest.",
+  shoulders: "If a shoulder is sharp rather than tight, leave it and see a physio.",
+  "upper back": "The foam roller extension is the best one for this. Shift an inch at a time.",
+  neck: "Neck tightness is usually the head drifting forward over a screen all day. Chin tucks fix the cause.",
+  wrists: "Comes from pressing and from a keyboard. Ease off the moment it pinches.",
+};
+const STRETCH_IDS = Object.keys(EX).filter((k) => (EX[k].parts || []).length);
+const forPart = (part) => STRETCH_IDS.filter((id) => (EX[id].parts || []).includes(part));
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
 const SPINE = ["squat", "frontsquat", "smithsquat", "rdl", "deadlift", "goodmorning", "kbdead", "lunge", "walklunge", "bulgarian", "swing", "goblet", "dbsquat", "row", "lmrow", "carry", "kbcarry"];
 
 /* ---------- the weekly program, built from your plan and your kit ---------- */
@@ -681,6 +897,33 @@ function cardioFor(kit) {
     .sort((a, b) => EX[b].rank - EX[a].rank)[0] || "walk";
 }
 
+/* Swaps. Some lifts just don't suit a body — shoulders that won't rack a front squat,
+   a knee, an old injury. A swap is remembered, so the programme never offers that move
+   again: the slot still gets filled, it just gets filled with the one you chose. */
+const swapOf = (id, kit, swaps) => {
+  const to = swaps && swaps[id];
+  return to && to !== id && EX[to] && canDo(to, kit) ? to : id;
+};
+// Patterns close enough to stand in when the kit only offers one of something.
+const PAT_NEAR = {
+  squat: ["quad", "lunge"], quad: ["squat", "lunge"], lunge: ["squat", "quad"],
+  hinge: ["ham", "glute"], ham: ["hinge", "glute"], glute: ["hinge", "ham"],
+  hpush: ["vpush", "tri"], vpush: ["hpush", "delt"], delt: ["vpush", "hpush"],
+  hpull: ["vpull", "bi"], vpull: ["hpull", "bi"], bi: ["hpull"], tri: ["hpush", "vpush"],
+  core: ["carry"], carry: ["core"], calf: [],
+};
+// What this move could be replaced with: the same pattern first, then near-enough ones.
+function altsFor(id, kit, swaps) {
+  const e = EX[id];
+  if (!e || e.g !== "strength") return { same: [], near: [] };
+  const away = swaps || {};
+  const ok = (x) => x !== id && !away[x] && swapOf(x, kit, swaps) === x;
+  return {
+    same: optionsFor(e.pat, kit).filter(ok),
+    near: (PAT_NEAR[e.pat] || []).flatMap((p) => optionsFor(p, kit)).filter(ok),
+  };
+}
+
 // Each day is a list of movement patterns, most important first.
 const TEMPLATES = {
   lowerA: { title: "Lower A", sub: "Squat focus", back: true, slots: ["squat", "hinge:2", "quad", "lunge", "calf", "core"] },
@@ -717,6 +960,7 @@ const DEFAULT_PLAN = {
   trackWeight: true,
   trainTime: "06:00",
   equipment: BEN_EQUIP,
+  swaps: {},          // { "move you can't do": "move you'd rather do" }
 };
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const weekOrder = (d) => (d + 6) % 7; // Monday first
@@ -724,6 +968,7 @@ const weekOrder = (d) => (d + 6) % 7; // Monday first
 function buildDays(planIn, shuffle) {
   const plan = { ...DEFAULT_PLAN, ...(planIn || {}) };
   const kit = plan.equipment && plan.equipment.length ? plan.equipment : [];
+  const swaps = plan.swaps || {};
   const sh = shuffle || {};
   const lift = [...new Set(plan.liftDays)].filter((d) => d >= 0 && d <= 6).sort((a, b) => weekOrder(a) - weekOrder(b));
   const canPull = optionsFor("hpull", kit).length + optionsFor("vpull", kit).length;
@@ -742,13 +987,20 @@ function buildDays(planIn, shuffle) {
   // Pick for one slot: prefer a move not yet used this week, fall back to reuse when the kit is small.
   const pick = (slot, used, seed) => {
     const [pattern, sec] = slot.split(":");
-    let opts = optionsFor(pattern, kit).filter((id) => !used.includes(id));
+    const res = (id) => swapOf(id, kit, swaps); // a swapped-out move becomes the chosen stand-in
+    const seen = [];
+    let opts = optionsFor(pattern, kit).filter((id) => {
+      const r = res(id);
+      if (used.includes(r) || seen.includes(r)) return false; // two moves can swap to the same one
+      seen.push(r);
+      return true;
+    });
     if (sec && opts.length > 1) opts = opts.slice(1);
     // Reshuffle should give a real alternative, not a worse workout: stay near the best option.
     if (opts.length) { const best = EX[opts[0]].rank; opts = opts.filter((id) => EX[id].rank >= best - 30); }
-    const fresh = opts.filter((id) => !week.includes(id));
+    const fresh = opts.filter((id) => !week.includes(res(id)));
     const pool = fresh.length ? fresh : opts;
-    return pool.length ? pool[seed % pool.length] : null;
+    return pool.length ? res(pool[seed % pool.length]) : null;
   };
   lift.forEach((dow, i) => {
     const key = split[i % split.length];
@@ -1025,6 +1277,54 @@ function ExerciseSheet({ id, onClose }) {
   );
 }
 
+/* ---------- Swap an exercise ---------- */
+/* Two different jobs, so two buttons. "Just today" leaves the programme alone.
+   "Always" is the one that matters: a lift your body won't do is never coming good,
+   so the app should stop offering it. */
+function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onClose }) {
+  const ex = EX[id];
+  const { same, near } = altsFor(id, kit, swaps);
+  const [sel, setSel] = useState(same[0] || near[0] || null);
+  const Pick = ({ x }) => (
+    <button key={x} onClick={() => setSel(x)} aria-pressed={sel === x}
+      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "8px 10px", marginTop: 6, borderRadius: 14,
+               background: sel === x ? C.panel : "transparent", border: `1px solid ${sel === x ? C.sun : C.line}` }}>
+      <div style={{ width: 56, height: 56, background: C.deep, borderRadius: 11, padding: 3, flexShrink: 0 }}><Figure pose={EX[x].pose} imp={EX[x].imp} /></div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 600 }}>{EX[x].name}</div>
+        <div className="sub" style={{ fontSize: 13 }}>{EX[x].cues[0]}</div>
+      </div>
+      {sel === x && <Check size={18} color={C.sun} />}
+    </button>
+  );
+  return (
+    <Sheet onClose={onClose}>
+      <h2 className="h2" style={{ fontSize: 23 }}>Swap {ex.name}</h2>
+      <p className="sub">{PAT[ex.pat] ? `Anything here trains the same thing, so the week stays balanced.` : "Pick what you'd rather do."}</p>
+      {same.length === 0 && near.length === 0 && (
+        <p className="sub" style={{ marginTop: 16 }}>Your kit doesn't offer another {(PAT[ex.pat] || "").toLowerCase()} move. Add equipment under Your plan and this fills up.</p>
+      )}
+      {same.length > 0 && <>
+        <div style={{ fontWeight: 600, marginTop: 16, fontSize: 14, color: C.mist }}>{(PAT[ex.pat] || "Same movement").toUpperCase()}</div>
+        {same.slice(0, 8).map((x) => <Pick key={x} x={x} />)}
+      </>}
+      {near.length > 0 && <>
+        <div style={{ fontWeight: 600, marginTop: 18, fontSize: 14, color: C.mist }}>CLOSE ENOUGH</div>
+        {near.slice(0, 6).map((x) => <Pick key={x} x={x} />)}
+      </>}
+      {sel && (
+        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+          {inSession && <button className="pill ghost" style={{ flex: 1 }} onClick={() => onToday(sel)}>Just today</button>}
+          <button className="pill go" style={{ flex: 1.3 }} onClick={() => onAlways(sel)}>Always use this</button>
+        </div>
+      )}
+      {sel && <p className="sub" style={{ marginTop: 12 }}>
+        "Always" means {ex.name} stops appearing anywhere in your programme and {EX[sel].name} takes its place. Your logged history for both stays put, and you can undo it under Coach, Your plan.
+      </p>}
+    </Sheet>
+  );
+}
+
 function RoutineSheet({ which, onClose }) {
   const list = which === "evening" ? EVENING : DESKR;
   return (
@@ -1045,29 +1345,28 @@ function RoutineSheet({ which, onClose }) {
 function TightSheet({ onClose, openEx }) {
   const [picked, setPicked] = useState([]);
   const toggle = (a) => setPicked((o) => (o.includes(a) ? o.filter((x) => x !== a) : [...o, a]));
-  const chosen = TIGHT.filter((t) => picked.includes(t.area));
   const routine = [];
-  chosen.forEach((t) => t.ids.forEach((id) => { if (!routine.includes(id)) routine.push(id); }));
-  const list = routine.slice(0, 6);
+  picked.forEach((part) => forPart(part).forEach((id) => { if (!routine.includes(id)) routine.push(id); }));
+  const list = routine.slice(0, 7);
   return (
     <Sheet onClose={onClose}>
       <h2 className="h2" style={{ fontSize: 24 }}>What's tight?</h2>
       <p className="sub">Tap everything that's complaining. You'll get the stretches that actually reach it, in the order to do them.</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
-        {TIGHT.map((t) => {
-          const on = picked.includes(t.area);
+        {BODY_PARTS.map((part) => {
+          const on = picked.includes(part);
           return (
-            <button key={t.area} onClick={() => toggle(t.area)} aria-pressed={on}
-              style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: on ? C.sun : C.panel, color: on ? C.night : C.paper }}>{t.area}</button>
+            <button key={part} onClick={() => toggle(part)} aria-pressed={on}
+              style={{ padding: "10px 15px", borderRadius: 999, fontSize: 14, fontWeight: 600, background: on ? C.sun : C.panel, color: on ? C.night : C.paper }}>{cap(part)}</button>
           );
         })}
       </div>
 
       {list.length === 0 && <p className="sub" style={{ marginTop: 22 }}>Nothing picked yet. If everything's tight, start with hips and upper back — that's where a day of sitting lands.</p>}
 
-      {chosen.map((t) => (
-        <p key={t.area} style={{ marginTop: 18, paddingLeft: 14, borderLeft: `3px solid ${C.sun}`, fontSize: 15, lineHeight: 1.5 }}>
-          <span style={{ fontWeight: 700 }}>{t.area}.</span> {t.note}
+      {picked.filter((part) => PART_NOTE[part]).map((part) => (
+        <p key={part} style={{ marginTop: 18, paddingLeft: 14, borderLeft: `3px solid ${C.sun}`, fontSize: 15, lineHeight: 1.5 }}>
+          <span style={{ fontWeight: 700 }}>{cap(part)}.</span> {PART_NOTE[part]}
         </p>
       ))}
 
@@ -1081,7 +1380,7 @@ function TightSheet({ onClose, openEx }) {
               <button onClick={() => openEx(id)} style={{ width: 72, height: 72, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }} aria-label={`${EX[id].name} demo`}><Figure pose={EX[id].pose} imp={EX[id].imp} /></button>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{EX[id].name}</div>
-                <div className="sub">{DOSE[id] || "45 s"}</div>
+                <div className="sub">{DOSE[id] || "45 s each side"}</div>
                 <div className="sub">{EX[id].cues[0]}</div>
               </div>
             </div>
@@ -1300,6 +1599,31 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
   };
   const [askBack, setAskBack] = useState(null);
   const [sure, setSure] = useState(false);
+  const [swap, setSwap] = useState(null); // id being swapped
+
+  const uPlan = { ...DEFAULT_PLAN, ...(s.plan || {}) };
+  // Drop a replacement into the running session in place of the old one, keeping
+  // its spot and its superset partner. The new lift's own history drives the weights.
+  const swapLive = (from, to) => setS((o) => {
+    if (!o.active) return o;
+    const items = o.active.items.map((x) => {
+      if (x.id !== from) return x.pair === from ? { ...x, pair: to } : x;
+      const built = prefill(mk(to), o.sessions, o.active.back, today);
+      return x.pair ? { ...built, pair: x.pair } : built;
+    });
+    return { ...o, active: { ...o.active, items } };
+  });
+  const swapToday = (to) => { swapLive(swap, to); setSwap(null); };
+  const swapAlways = (to) => {
+    const from = swap;
+    setS((o) => ({ ...o, plan: { ...DEFAULT_PLAN, ...(o.plan || {}), swaps: { ...((o.plan || {}).swaps || {}), [from]: to } } }));
+    swapLive(from, to); // so today's session changes too, not just next week's
+    setSwap(null);
+  };
+  const SwapUI = swap && EX[swap] ? (
+    <SwapSheet id={swap} kit={uPlan.equipment || []} swaps={uPlan.swaps || {}} inSession={!!A}
+      onToday={swapToday} onAlways={swapAlways} onClose={() => setSwap(null)} />
+  ) : null;
 
   if (summary) {
     return (
@@ -1351,14 +1675,22 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
             let sug = it.min || it.sec ? null : suggest(it, last, today);
             if (sug && !sug.w && it.kg == null) sug = { w: null };
             return (
-              <button key={i} onClick={() => openEx(it.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
-                <div style={{ width: 54, height: 54, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose={EX[it.id].pose} imp={EX[it.id].imp} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600 }}>{EX[it.id].name}</div>
-                  <div className="sub">{it.min ? `${it.min} min` : it.sec ? `${it.sec} s` : `${it.sets} × ${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`}${it.note ? ` ${it.note}` : ""}`}</div>
-                </div>
-                {sug && !it.bw && <div className="num" style={{ fontSize: 18, color: sug.w == null ? C.mist : C.paper }}>{sug.w == null ? "set kg" : `${sug.w} kg`}</div>}
-              </button>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+                <button onClick={() => openEx(it.id)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, textAlign: "left", minWidth: 0 }}>
+                  <div style={{ width: 54, height: 54, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose={EX[it.id].pose} imp={EX[it.id].imp} /></div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600 }}>{EX[it.id].name}</div>
+                    <div className="sub">{it.min ? `${it.min} min` : it.sec ? `${it.sec} s` : `${it.sets} × ${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`}${it.note ? ` ${it.note}` : ""}`}</div>
+                  </div>
+                  {sug && !it.bw && <div className="num" style={{ fontSize: 18, color: sug.w == null ? C.mist : C.paper }}>{sug.w == null ? "set kg" : `${sug.w} kg`}</div>}
+                </button>
+                {EX[it.id].g === "strength" && (
+                  <button onClick={() => setSwap(it.id)} aria-label={`Swap ${EX[it.id].name}`}
+                    style={{ width: 40, height: 40, borderRadius: 10, background: C.panel, color: C.mist, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    <Repeat size={17} />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -1388,6 +1720,7 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
             <p className="sub" style={{ marginTop: 14 }}>If soreness sticks around more than a week or runs down a leg, get it looked at.</p>
           </Sheet>
         )}
+        {SwapUI}
       </div>
     );
   }
@@ -1499,7 +1832,15 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
         <Figure pose={ex.pose} imp={ex.imp} label={ex.name} />
         {A.back === "tight" && SPINE.includes(it.id) && <div style={{ position: "absolute", left: 12, top: 10, fontSize: 12, background: C.deep, padding: "4px 10px", borderRadius: 999, color: C.sun }}>Back: go 10% lighter</div>}
       </div>
-      <h1 className="h1" style={{ marginTop: 16, fontSize: 26 }}>{ex.name}</h1>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, marginTop: 16 }}>
+        <h1 className="h1" style={{ fontSize: 26, flex: 1 }}>{ex.name}</h1>
+        {ex.g === "strength" && (
+          <button onClick={() => setSwap(it.id)} aria-label={`Swap ${ex.name}`}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 999, background: C.panel, color: C.mist, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+            <Repeat size={15} />Swap
+          </button>
+        )}
+      </div>
       <div className="sub" style={{ fontSize: 15 }}>
         {timed ? (it.min ? `${it.min} minutes` : `${it.sec} seconds`) : `${it.n} × ${it.lo === it.hi ? it.lo : `${it.lo}–${it.hi}`}${it.note ? ` ${it.note}` : ""} · rest ${Math.floor(it.rest / 60)}:${String(it.rest % 60).padStart(2, "0")}`}
         {it.note && timed ? ` · ${it.note}` : ""}
@@ -1539,6 +1880,7 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
       </div>
       <button onClick={() => { if (sure) { setS((o) => ({ ...o, active: null })); setSure(false); } else setSure(true); }} style={{ color: sure ? C.rose : C.mist, fontSize: 13, marginTop: 18 }}>{sure ? "Tap again to discard. Nothing will be saved." : "Discard session"}</button>
       {Timerbar}
+      {SwapUI}
     </div>
   );
 }
@@ -1635,18 +1977,36 @@ function Progress({ s, setS, today }) {
 /* ---------- Library ---------- */
 function Library({ openEx, openTight }) {
   const [g, setG] = useState("strength");
+  const [part, setPart] = useState(null);
   const groups = [["strength", "Strength"], ["warm", "Movement block"], ["cardio", "Cardio"], ["stretch", "Stretches"], ["evening", "Evening"], ["desk", "Desk reset"]];
-  const ids = g === "desk" ? DESKR.map((x) => x[0]) : g === "evening" ? EVENING.map((x) => x[0]) : Object.keys(EX).filter((k) => EX[k].g === g);
+  const ids = g === "desk" ? DESKR.map((x) => x[0])
+    : g === "evening" ? EVENING.map((x) => x[0])
+    : g === "stretch" ? (part ? forPart(part) : STRETCH_IDS)
+    : Object.keys(EX).filter((k) => EX[k].g === g);
   return (
     <div className="wrap" style={{ paddingTop: 28 }}>
       <h1 className="h1">Library</h1>
       <button className="pill go" style={{ width: "100%", marginTop: 14, padding: 14, fontSize: 16 }} onClick={openTight}>Something's tight — what do I stretch?</button>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", margin: "16px 0" }}>
         {groups.map(([k, t]) => (
-          <button key={k} onClick={() => setG(k)} style={{ padding: "8px 14px", borderRadius: 999, flexShrink: 0, background: g === k ? C.sun : C.panel, color: g === k ? C.night : C.paper, fontWeight: 600, fontSize: 14 }}>{t}</button>
+          <button key={k} onClick={() => { setG(k); setPart(null); }} style={{ padding: "8px 14px", borderRadius: 999, flexShrink: 0, background: g === k ? C.sun : C.panel, color: g === k ? C.night : C.paper, fontWeight: 600, fontSize: 14 }}>{t}</button>
         ))}
       </div>
       {g === "desk" && <p className="sub" style={{ marginTop: -4 }}>Two minutes, once an hour, when you've been sitting or driving. Do them in order.</p>}
+      {g === "stretch" && (
+        <div style={{ marginBottom: 14 }}>
+          <div className="sub" style={{ marginBottom: 8 }}>Filter by what you want to reach.</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button onClick={() => setPart(null)} aria-pressed={!part}
+              style={{ padding: "7px 13px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: !part ? C.sun : C.panel, color: !part ? C.night : C.paper }}>All</button>
+            {BODY_PARTS.map((bp) => (
+              <button key={bp} onClick={() => setPart(part === bp ? null : bp)} aria-pressed={part === bp}
+                style={{ padding: "7px 13px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: part === bp ? C.sun : C.panel, color: part === bp ? C.night : C.paper }}>{cap(bp)}</button>
+            ))}
+          </div>
+          {part && PART_NOTE[part] && <p className="sub" style={{ marginTop: 12, paddingLeft: 12, borderLeft: `3px solid ${C.sun}` }}>{PART_NOTE[part]}</p>}
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {ids.map((id) => (
           <button key={id} onClick={() => openEx(id)} style={{ background: C.panel, borderRadius: 16, padding: 10, textAlign: "left" }}>
@@ -1860,6 +2220,25 @@ function PlanSheet({ s, setS, onClose }) {
         <button className="pill ghost" onClick={() => setEq(!eq)}>{eq ? "Done with equipment" : `Change equipment (${(plan.equipment || []).length} ticked)`}</button>
         {eq && <div style={{ marginTop: 14 }}><EquipPicker value={plan.equipment || []} onChange={(v) => set({ equipment: v })} /></div>}
       </div>
+
+      {Object.keys(plan.swaps || {}).length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Exercises you've swapped out</div>
+          <div className="sub" style={{ marginBottom: 6 }}>These never appear in your programme. Remove one and it comes back.</div>
+          {Object.entries(plan.swaps).filter(([f, t]) => EX[f] && EX[t]).map(([from, to]) => (
+            <div key={from} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
+              <div style={{ flex: 1, fontSize: 15 }}>
+                <span style={{ color: C.mist, textDecoration: "line-through" }}>{EX[from].name}</span>
+                <span style={{ color: C.mist }}> → </span>
+                <span style={{ fontWeight: 600 }}>{EX[to].name}</span>
+              </div>
+              <button aria-label={`Stop swapping ${EX[from].name}`} onClick={() => {
+                const next = { ...plan.swaps }; delete next[from]; set({ swaps: next });
+              }} style={{ width: 36, height: 36, borderRadius: 10, background: C.panel, display: "grid", placeItems: "center", flexShrink: 0 }}><X size={16} /></button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ marginTop: 20 }}>
         <div style={{ fontWeight: 600, marginBottom: 8 }}>What time do you train?</div>
@@ -2134,7 +2513,11 @@ function planSummary(s) {
   bits.push(plan.cardio === "off" ? "no cardio" : plan.cardio === "own" ? "cardio on its own day" : "cardio in each session");
   bits.push(plan.stretch === "off" ? "no stretching" : plan.stretch === "own" ? "stretching on its own day" : "stretching at the end of each session");
   if (!plan.trackWeight) bits.push("weight not tracked");
-  return bits.join(" \u00b7 ") + ".";
+  const sw = Object.entries(plan.swaps || {}).filter(([f, t]) => EX[f] && EX[t]);
+  let out = bits.join(" \u00b7 ") + ".";
+  // The coach must never suggest a lift they've told the app they can't do.
+  if (sw.length) out += ` Cannot or will not do: ${sw.map(([f, t]) => `${EX[f].name} (does ${EX[t].name} instead)`).join("; ")}. Never suggest those.`;
+  return out;
 }
 
 function Section({ title, sub, children, first }) {
