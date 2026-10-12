@@ -1145,12 +1145,108 @@ const OUTCOMES = [
 
 /* ---------- storage ---------- */
 const KEY = "sharpen-v1";
-export const APP_VERSION = "2.0.0";
-// The log lives in this browser only. Nothing is sent anywhere.
+export const APP_VERSION = "2.1.0";
+
+/* Storage, written on the assumption that the device will try to lose your log.
+   A real training history was lost to this: the phone cleared the app's storage,
+   the app found nothing, started blank, and then saved the blank over the top.
+   Three rules came out of that, and they matter more than anything else here.
+     1. Ask the OS to treat this data as persistent, so it isn't evicted.
+     2. Keep a second copy, and rolling snapshots, in a different store.
+     3. NEVER write over something that failed to load. A failed read is not an
+        empty log, and treating it as one is what destroys the data for good. */
 const store = {
   get() { try { return window.localStorage.getItem(KEY); } catch (e) { return null; } },
   set(v) { try { window.localStorage.setItem(KEY, v); return true; } catch (e) { return false; } },
 };
+
+// Ask Android/Chrome not to evict us. Silent if refused; it only ever helps.
+function askPersistent() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persisted().then((already) => { if (!already) navigator.storage.persist(); });
+    }
+  } catch (e) {}
+}
+
+// A second, independent copy. localStorage and IndexedDB don't usually fail together.
+const IDB_NAME = "sharpen", IDB_STORE = "kv", MIRROR = "mirror", SNAPS = "snapshots";
+function idbOpen() {
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open(IDB_NAME, 1);
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains(IDB_STORE)) d.createObjectStore(IDB_STORE); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => rej(new Error("blocked"));
+    } catch (e) { rej(e); }
+  });
+}
+function idbGet(k) {
+  return idbOpen().then((d) => new Promise((res, rej) => {
+    const t = d.transaction(IDB_STORE, "readonly").objectStore(IDB_STORE).get(k);
+    t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error);
+  })).catch(() => null);
+}
+function idbSet(k, v) {
+  return idbOpen().then((d) => new Promise((res, rej) => {
+    const t = d.transaction(IDB_STORE, "readwrite").objectStore(IDB_STORE).put(v, k);
+    t.onsuccess = () => res(true); t.onerror = () => rej(t.error);
+  })).catch(() => false);
+}
+
+// How much real history a candidate holds. Used to pick the best copy on load,
+// and to refuse a save that would throw history away.
+function weigh(v) {
+  if (!v || typeof v !== "object") return -1;
+  const sets = (v.sessions || []).reduce((n, x) => n + (x.items || []).reduce((m, it) => m + ((it.sets || []).filter((q) => q.done).length || (it.done ? 1 : 0)), 0), 0);
+  return (v.sessions || []).length * 1000 + Object.keys(v.habits || {}).length * 10 + (v.weighins || []).length * 10 + sets;
+}
+const parse = (raw) => { try { const v = JSON.parse(raw); return v && typeof v === "object" ? v : null; } catch (e) { return null; } };
+
+/* Gather every copy we can find and return the fullest one, plus whether anything
+   was unreadable — because if something was there and we couldn't read it, the app
+   must not save over it. */
+async function loadBest() {
+  const out = { pick: null, unreadable: null, from: "none" };
+  const localRaw = store.get();
+  const local = localRaw ? parse(localRaw) : null;
+  if (localRaw && !local) out.unreadable = localRaw;
+
+  let mirror = null, snaps = [];
+  try {
+    const m = await idbGet(MIRROR);
+    mirror = typeof m === "string" ? parse(m) : m && typeof m === "object" ? m : null;
+    const s = await idbGet(SNAPS);
+    snaps = Array.isArray(s) ? s : [];
+  } catch (e) {}
+
+  const cands = [["local", local], ["mirror", mirror], ...snaps.map((x, i) => [`snapshot ${i}`, x && x.v])]
+    .filter(([, v]) => v);
+  if (!cands.length) return out;
+  cands.sort((a, b) => weigh(b[1]) - weigh(a[1]));
+  out.from = cands[0][0];
+  out.pick = cands[0][1];
+  // Falling back to a second copy means the main one was missing or had lost
+  // history. Either way the user should be told, not quietly patched up.
+  if (cands[0][0] !== "local" && weigh(cands[0][1]) > weigh(local)) out.recovered = true;
+  return out;
+}
+
+// Keep the last 20 saves plus one a day, so a bad day can be rolled back.
+async function snapshot(v) {
+  try {
+    const s = (await idbGet(SNAPS)) || [];
+    const list = Array.isArray(s) ? s : [];
+    const today = todayKey();
+    const daily = {};
+    list.forEach((x) => { if (x && x.day) daily[x.day] = x; });
+    const next = [...list, { at: Date.now(), day: today, v }];
+    const recent = next.slice(-20);
+    const days = Object.values(daily).filter((x) => !recent.includes(x)).slice(-14);
+    await idbSet(SNAPS, [...days, ...recent]);
+  } catch (e) {}
+}
 const L = (id, arr, extra = {}) => ({ id, sets: arr.map(([w, r]) => ({ w, r, done: true })), ...extra });
 const SEED_SESSIONS = [
   { date: "2026-08-10", title: "Lower A", mins: null, items: [L("squat", [[60, 10], [60, 10], [60, 8]]), L("dbrdl", [[9, 10], [12.5, 10], [12.5, 8]]), L("legext", [[15, 12], [15, 12], [15, 12]]), L("calf", [["", 12], ["", 12], ["", 12]])], note: "Lunges skipped, out of time" },
@@ -2838,12 +2934,23 @@ export default function App() {
   const [pickDay, setPickDay] = useState(dowOf(today));
   applyPlan(s.plan, s.shuffles); // rebuild the week from the saved plan before anything renders
 
+  const [rescue, setRescue] = useState(null); // something was there and wouldn't read
+  const [recovered, setRecovered] = useState(null);
+  const fileRescueRef = useRef(null);
+
   useEffect(() => {
-    (() => {
+    askPersistent();
+    (async () => {
       try {
-        const raw = store.get();
-        if (raw) {
-          const v = JSON.parse(raw);
+        const found = await loadBest();
+        if (!found.pick && found.unreadable) {
+          // Stop. Do not start blank, and do not save: the save would destroy it.
+          setRescue(found.unreadable);
+          return;
+        }
+        const v = found.pick;
+        if (v) {
+          if (found.recovered) setRecovered(found.from);
           let next = { ...DEFAULT, ...v, profile: { ...DEFAULT.profile, ...(v.profile || {}) } };
           if ((v.ver || 1) < 2) {
             const dates = new Set((v.sessions || []).map((x) => x.date));
@@ -2864,11 +2971,17 @@ export default function App() {
       setLoaded(true);
     })();
   }, []);
+
   useEffect(() => {
-    if (!loaded) return;
-    const t = setTimeout(() => { setSaveErr(!store.set(JSON.stringify(s))); }, 400);
+    if (!loaded || rescue) return; // never save while a log is sitting there unread
+    const t = setTimeout(() => {
+      const json = JSON.stringify(s);
+      setSaveErr(!store.set(json));
+      idbSet(MIRROR, json);
+      snapshot(s);
+    }, 400);
     return () => clearTimeout(t);
-  }, [s, loaded]);
+  }, [s, loaded, rescue]);
 
   const h = { ...blankHabits, ...(s.habits[today] || {}) };
   const P = s.profile;
@@ -2892,7 +3005,54 @@ export default function App() {
   const goTrain = (key) => { setPickDay(key); setTab("train"); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, s.active ? s.active.idx : -1, s.active ? s.active.phase : ""]);
 
-  if (!loaded) return <div className="sh" style={{ display: "grid", placeItems: "center" }}><style>{css}</style><div className="sub">Loading your log…</div></div>;
+  if (!loaded && !rescue) return <div className="sh" style={{ display: "grid", placeItems: "center" }}><style>{css}</style><div className="sub">Loading your log…</div></div>;
+
+  /* Something is stored and it won't read. The app does NOT start fresh here —
+     starting fresh means the next save wipes whatever is left. Nothing is written
+     to storage while this screen is up. */
+  if (rescue) {
+    return (
+      <div className="sh"><style>{css}</style>
+        <div className="wrap" style={{ paddingTop: 40 }}>
+          <h1 className="h1">Your log needs a hand</h1>
+          <p style={{ marginTop: 12, lineHeight: 1.5 }}>
+            There's training data saved on this device but the app can't read it. That usually means a save was cut short.
+          </p>
+          <p className="sub" style={{ marginTop: 10 }}>
+            Nothing has been changed or deleted, and the app won't save anything until you choose. Save the file first — even if the app can't read it, it can probably be repaired.
+          </p>
+          <button className="pill go" style={{ width: "100%", marginTop: 22, padding: 15 }}
+            onClick={() => download(`sharpen-rescue-${today}.txt`, rescue, "text/plain")}>
+            <Download size={16} style={{ verticalAlign: -3, marginRight: 8 }} />Save the file
+          </button>
+          <button className="pill ghost" style={{ width: "100%", marginTop: 10, padding: 13 }}
+            onClick={() => window.location.reload()}>Try reading it again</button>
+          <button className="pill ghost" style={{ width: "100%", marginTop: 10, padding: 13 }}
+            onClick={() => fileRescueRef.current && fileRescueRef.current.click()}>
+            <Upload size={15} style={{ verticalAlign: -2, marginRight: 8 }} />Restore from a backup instead
+          </button>
+          <input ref={fileRescueRef} type="file" accept="application/json,.json,.txt" style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files && e.target.files[0];
+              e.target.value = "";
+              if (!f) return;
+              const r = new FileReader();
+              r.onload = () => {
+                const v = parse(String(r.result));
+                if (!v) { window.alert("That file didn't look like a Sharpen backup."); return; }
+                setS({ ...DEFAULT, ...v, profile: { ...DEFAULT.profile, ...(v.profile || {}) } });
+                setRescue(null); setLoaded(true);
+              };
+              r.readAsText(f);
+            }} />
+          <button onClick={() => { if (window.confirm("This permanently deletes the stored log and starts over. Save the file first if you haven't.")) { setRescue(null); setLoaded(true); } }}
+            style={{ display: "block", margin: "26px auto 0", color: C.rose, fontSize: 14 }}>
+            Start over and lose it
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!s.setupDone) {
     return (
@@ -2913,6 +3073,12 @@ export default function App() {
     <div className="sh">
       <style>{css}</style>
       {saveErr && <div style={{ background: C.rose, color: C.night, padding: "8px 18px", fontSize: 14 }}>Couldn't save to this phone's storage. Your changes are on screen but won't survive a reload. Private browsing mode is the usual cause.</div>}
+      {recovered && (
+        <div style={{ background: C.sun, color: C.night, padding: "10px 18px", fontSize: 14, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1 }}><strong>Recovered your log.</strong> This phone's main copy was missing or short, so it was restored from the {recovered === "mirror" ? "backup copy" : "last good snapshot"}.</div>
+          <button onClick={() => setRecovered(null)} aria-label="Dismiss" style={{ padding: 4 }}><X size={18} /></button>
+        </div>
+      )}
       {tab === "today" && <Today s={s} setS={setS} today={today} goTrain={goTrain} openEx={setExOpen} openRoutine={setRoutine} openTight={() => setTightOpen(true)} habitsDone={done} habitsTotal={checks.length} coach={coach} />}
       {tab === "train" && <Train s={s} setS={setS} today={today} pickDay={pickDay} setPickDay={setPickDay} openEx={setExOpen} openPlan={() => setPlanOpen(true)} />}
       {tab === "progress" && <Progress s={s} setS={setS} today={today} />}
