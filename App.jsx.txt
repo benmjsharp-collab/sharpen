@@ -224,6 +224,29 @@ const POSES = {
     b: { h: [22, 58], s: [32, 60], p: [58, 66], k: [74, 70], a: [90, 72], f: [92, 66], e: [34, 50], w: [28, 42] },
     imp: "bar-fixed", anchor: [28, 42], props: ["lowbar"],
   },
+  // Pulling with nothing at all. Leaning back off a door frame, and the prone
+  // floor raises — between them a kitless week still gets a back session.
+  doorrow: {
+    a: { h: [58, 29], s: [53, 39], p: [42, 60], k: [31, 78], a: [23, 93], f: [29, 95], e: [38, 42], w: [17, 46] },
+    b: { h: [47, 27], s: [43, 37], p: [36, 59], k: [29, 78], a: [23, 93], f: [29, 95], e: [33, 49], w: [17, 46] },
+    props: ["doorframe"],
+  },
+  proney: {
+    a: { h: [82, 87], s: [72, 88], p: [46, 90], k: [30, 90], a: [16, 91], f: [13, 93], e: [87, 91], w: [97, 92] },
+    b: { h: [82, 85], s: [72, 87], p: [46, 90], k: [30, 90], a: [16, 91], f: [13, 93], e: [88, 83], w: [98, 76] },
+  },
+  snowangel: {
+    a: { h: [82, 87], s: [72, 88], p: [46, 90], k: [30, 90], a: [16, 91], f: [13, 93], e: [62, 85], w: [51, 87] },
+    b: { h: [82, 87], s: [72, 88], p: [46, 90], k: [30, 90], a: [16, 91], f: [13, 93], e: [86, 83], w: [97, 83] },
+  },
+  superman: {
+    a: { h: [82, 88], s: [72, 89], p: [46, 90], k: [30, 90], a: [16, 91], f: [13, 93], e: [86, 91], w: [95, 92] },
+    b: { h: [85, 79], s: [74, 83], p: [46, 90], k: [30, 85], a: [16, 78], f: [13, 76], e: [89, 79], w: [98, 74] },
+  },
+  singlebridge: {
+    a: { h: [14, 87], s: [24, 89], p: [46, 89], k: [60, 72], a: [68, 93], k2: [58, 80], a2: [80, 75], e: [32, 93], w: [42, 93] },
+    b: { h: [14, 87], s: [24, 89], p: [48, 72], k: [63, 70], a: [68, 93], k2: [62, 62], a2: [86, 52], e: [32, 93], w: [42, 93] },
+  },
   nordic: {
     a: { h: [40, 34], s: [42, 45], p: [46, 70], k: [50, 88], a: [70, 90], f: [76, 88], e: [40, 56], w: [36, 68] },
     b: { h: [22, 56], s: [28, 62], p: [44, 76], k: [50, 88], a: [70, 90], f: [76, 88], e: [22, 70], w: [18, 82] },
@@ -660,7 +683,12 @@ const EX = {
   lmrow: Ex("Landmine row", "row", "hpull", ["landmine"], 75, { inc: 2.5, imp: "landmine", cues: ["Hinge to about 45°, back flat", "Pull the sleeve to your belly, squeeze the back"] }),
   trxrow: Ex("Suspension row", "invrow", "hpull", ["trx"], 62, { bw: true, cues: ["Body straight, heels planted", "Pull the chest to the handles"] }),
   invrow: Ex("Inverted row", "invrow", "hpull", ["pullup"], 60, { bw: true, cues: ["Bar at hip height, body straight", "Pull the chest to the bar"] }),
-  tablerow: Ex("Table row", "invrow", "hpull", [], 38, { bw: true, cues: ["Lie under a sturdy table or desk and grip the edge", "Body straight, pull the chest up to your hands"] }),
+  tablerow: Ex("Table row", "invrow", "hpull", [], 26, { bw: true, cues: ["Lie under a sturdy table or desk and grip the edge", "Body straight, pull the chest up to your hands"] }),
+  doorrow: Ex("Doorway row", "doorrow", "hpull", [], 34, { bw: true, cues: ["Grip both sides of a door frame at chest height", "Lean back with straight arms, then pull your chest in", "Walk your feet closer to the frame to make it easier"] }),
+  proney: Ex("Prone Y raise", "proney", "vpull", [], 32, { bw: true, lo: 12, hi: 15, cues: ["Face down, arms out overhead in a Y, thumbs up", "Lift the arms off the floor and squeeze the shoulder blades down", "Small lift, slow, no yanking"] }),
+  snowangel: Ex("Reverse snow angel", "snowangel", "delt", [], 30, { bw: true, lo: 12, hi: 15, cues: ["Face down, arms by your sides, palms down", "Sweep them along the floor to overhead and back", "Keep them just off the floor the whole way"] }),
+  superman: Ex("Superman", "superman", "hinge", [], 28, { bw: true, lo: 12, hi: 15, cues: ["Face down, lift your chest and thighs off the floor", "Look at the floor, long through the neck", "Hold a second at the top"] }),
+  singlebridge: Ex("Single-leg glute bridge", "singlebridge", "glute", [], 32, { bw: true, note: "each side", cues: ["One foot planted, the other leg straight out", "Drive through the heel and keep the hips level", "Squeeze hard at the top"] }),
   bandrow: Ex("Band row", "row", "hpull", ["bands"], 44, { bw: true, cues: ["Band anchored at chest height", "Pull to the ribs, elbows close"] }),
 
   /* --- vertical pull --- */
@@ -912,16 +940,44 @@ const PAT_NEAR = {
   hpull: ["vpull", "bi"], vpull: ["hpull", "bi"], bi: ["hpull"], tri: ["hpush", "vpush"],
   core: ["carry"], carry: ["core"], calf: [],
 };
-// What this move could be replaced with: the same pattern first, then near-enough ones.
+/* Moves that are really the same movement wearing a different hat. A push-up and
+   a pike push-up fill different slots on paper but read as two press-ups when they
+   land in one session, so a day takes at most one from each family. */
+const FAM = {
+  pushup: ["pushup", "pikepush", "diamond", "inclinepush", "declinepush", "widepush"],
+  prone: ["proney", "snowangel", "superman"],
+  plank: ["plank", "sideplank"],
+  bridge: ["bridge", "singlebridge", "hipthrust"],
+  row: ["invrow", "trxrow", "tablerow", "doorrow"],
+  kbswing: ["swing", "kbswingsingle", "kbswingalt"],
+  carry: ["carry", "kbsuitcase", "kbrackcarry", "kbwaiter"],
+};
+const FAM_OF = {};
+Object.entries(FAM).forEach(([f, ids]) => ids.forEach((i) => { FAM_OF[i] = f; }));
+
+// Moves that need nothing at all. This list is why the swap sheet can never come
+// back empty: whatever the kit, whatever the exercise, there is always something
+// simple to do instead.
+const NOKIT_IDS = STRENGTH_IDS.filter((id) => !(EX[id].eq || []).length)
+  .sort((a, b) => EX[b].rank - EX[a].rank);
+
+// What this move could be replaced with: the same pattern first, then near-enough
+// ones, then the floor-and-bodyweight tier as a guaranteed backstop.
 function altsFor(id, kit, swaps) {
   const e = EX[id];
-  if (!e || e.g !== "strength") return { same: [], near: [] };
+  if (!e || e.g !== "strength") return { same: [], near: [], simple: [] };
   const away = swaps || {};
   const ok = (x) => x !== id && !away[x] && swapOf(x, kit, swaps) === x;
-  return {
-    same: optionsFor(e.pat, kit).filter(ok),
-    near: (PAT_NEAR[e.pat] || []).flatMap((p) => optionsFor(p, kit)).filter(ok),
-  };
+  const same = optionsFor(e.pat, kit).filter(ok);
+  const near = (PAT_NEAR[e.pat] || []).flatMap((p) => optionsFor(p, kit)).filter(ok);
+  const shown = [...same, ...near];
+  // Lead with whatever is nearest the same job, so a swapped press-up doesn't
+  // offer a plank before it offers anything that presses.
+  const order = [e.pat, ...(PAT_NEAR[e.pat] || [])];
+  const rank = (x) => { const i = order.indexOf(EX[x].pat); return i === -1 ? 99 : i; };
+  const simple = NOKIT_IDS.filter((x) => ok(x) && !shown.includes(x))
+    .sort((a, b) => rank(a) - rank(b) || EX[b].rank - EX[a].rank);
+  return { same, near, simple };
 }
 
 // Each day is a list of movement patterns, most important first.
@@ -985,7 +1041,9 @@ function buildDays(planIn, shuffle) {
   const days = {};
   const week = []; // everything already used this week, so days don't all look the same
   // Pick for one slot: prefer a move not yet used this week, fall back to reuse when the kit is small.
-  const pick = (slot, used, seed) => {
+  // `loose` lets the final backfill pass break the one-per-family rule rather than
+  // leave the session short. Template slots and the first backfill pass never do.
+  const pick = (slot, used, seed, loose) => {
     const [pattern, sec] = slot.split(":");
     const res = (id) => swapOf(id, kit, swaps); // a swapped-out move becomes the chosen stand-in
     const seen = [];
@@ -996,10 +1054,21 @@ function buildDays(planIn, shuffle) {
       return true;
     });
     if (sec && opts.length > 1) opts = opts.slice(1);
-    // Reshuffle should give a real alternative, not a worse workout: stay near the best option.
-    if (opts.length) { const best = EX[opts[0]].rank; opts = opts.filter((id) => EX[id].rank >= best - 30); }
-    const fresh = opts.filter((id) => !week.includes(res(id)));
-    const pool = fresh.length ? fresh : opts;
+    // Reshuffle should give a real alternative, not a worse workout: stay near the
+    // best option. A bodyweight version of a lift you own kit for is a downgrade
+    // rather than a variation, so hold those to a tighter band — they stay one tap
+    // away in the swap sheet either way.
+    if (opts.length) {
+      const best = EX[opts[0]].rank;
+      opts = opts.filter((id) => EX[id].rank >= best - ((EX[id].eq || []).length ? 30 : 12));
+    }
+    // One move per family per day. A thin kit would rather drop the slot and let
+    // BACKFILL bring something genuinely different than serve a second press-up.
+    const fams = used.map((x) => FAM_OF[x]).filter(Boolean);
+    let pool = opts.filter((id) => !fams.includes(FAM_OF[res(id)]));
+    if (!pool.length) { if (!loose) return null; pool = opts; }
+    const fresh = pool.filter((id) => !week.includes(res(id)));
+    if (fresh.length) pool = fresh;
     return pool.length ? res(pool[seed % pool.length]) : null;
   };
   lift.forEach((dow, i) => {
@@ -1013,10 +1082,13 @@ function buildDays(planIn, shuffle) {
       const got = pick(slot, used, seed);
       if (got) { used.push(got); week.push(got); }
     });
-    // The kit couldn't fill every slot, so top the session back up.
-    for (let k = 0; used.length < n && k < BACKFILL.length; k++) {
-      const got = pick(BACKFILL[k], used, seed);
-      if (got) { used.push(got); week.push(got); }
+    // The kit couldn't fill every slot, so top the session back up. Second pass
+    // relaxes the family rule, so a very small kit still gets a full session.
+    for (const loose of [false, true]) {
+      for (let k = 0; used.length < n && k < BACKFILL.length; k++) {
+        const got = pick(BACKFILL[k], used, seed, loose);
+        if (got) { used.push(got); week.push(got); }
+      }
     }
 
     const items = used.map(mk);
@@ -1281,10 +1353,10 @@ function ExerciseSheet({ id, onClose }) {
 /* Two different jobs, so two buttons. "Just today" leaves the programme alone.
    "Always" is the one that matters: a lift your body won't do is never coming good,
    so the app should stop offering it. */
-function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onClose }) {
+function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onSkip, onKit, onClose }) {
   const ex = EX[id];
-  const { same, near } = altsFor(id, kit, swaps);
-  const [sel, setSel] = useState(same[0] || near[0] || null);
+  const { same, near, simple } = altsFor(id, kit, swaps);
+  const [sel, setSel] = useState(same[0] || near[0] || simple[0] || null);
   const Pick = ({ x }) => (
     <button key={x} onClick={() => setSel(x)} aria-pressed={sel === x}
       style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "8px 10px", marginTop: 6, borderRadius: 14,
@@ -1300,9 +1372,12 @@ function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onClose }) {
   return (
     <Sheet onClose={onClose}>
       <h2 className="h2" style={{ fontSize: 23 }}>Swap {ex.name}</h2>
-      <p className="sub">{PAT[ex.pat] ? `Anything here trains the same thing, so the week stays balanced.` : "Pick what you'd rather do."}</p>
-      {same.length === 0 && near.length === 0 && (
-        <p className="sub" style={{ marginTop: 16 }}>Your kit doesn't offer another {(PAT[ex.pat] || "").toLowerCase()} move. Add equipment under Your plan and this fills up.</p>
+      <p className="sub">There's always something else you can do. Pick whatever suits you.</p>
+      {!kit.length && (
+        <button onClick={onKit} style={{ display: "block", width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 14, background: C.panel, borderLeft: `3px solid ${C.sun}` }}>
+          <div style={{ fontWeight: 600 }}>No equipment ticked</div>
+          <div className="sub">That's why everything here is bodyweight. Tap to add your gear.</div>
+        </button>
       )}
       {same.length > 0 && <>
         <div style={{ fontWeight: 600, marginTop: 16, fontSize: 14, color: C.mist }}>{(PAT[ex.pat] || "Same movement").toUpperCase()}</div>
@@ -1311,6 +1386,10 @@ function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onClose }) {
       {near.length > 0 && <>
         <div style={{ fontWeight: 600, marginTop: 18, fontSize: 14, color: C.mist }}>CLOSE ENOUGH</div>
         {near.slice(0, 6).map((x) => <Pick key={x} x={x} />)}
+      </>}
+      {simple.length > 0 && <>
+        <div style={{ fontWeight: 600, marginTop: 18, fontSize: 14, color: C.mist }}>SOMETHING SIMPLE, NO KIT NEEDED</div>
+        {simple.slice(0, same.length + near.length ? 5 : 10).map((x) => <Pick key={x} x={x} />)}
       </>}
       {sel && (
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
@@ -1321,6 +1400,11 @@ function SwapSheet({ id, kit, swaps, inSession, onToday, onAlways, onClose }) {
       {sel && <p className="sub" style={{ marginTop: 12 }}>
         "Always" means {ex.name} stops appearing anywhere in your programme and {EX[sel].name} takes its place. Your logged history for both stays put, and you can undo it under Coach, Your plan.
       </p>}
+      {inSession && onSkip && (
+        <button onClick={onSkip} style={{ display: "block", width: "100%", marginTop: 18, padding: 12, color: C.mist, fontSize: 14 }}>
+          Or just drop it from today's session
+        </button>
+      )}
     </Sheet>
   );
 }
@@ -1581,7 +1665,7 @@ function useNow(active) {
   return n;
 }
 
-function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
+function Train({ s, setS, today, pickDay, setPickDay, openEx, openPlan }) {
   const A = s.active;
   const [timer, setTimer] = useState(null); // {until, label}
   const now = useNow(!!timer);
@@ -1620,9 +1704,22 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
     swapLive(from, to); // so today's session changes too, not just next week's
     setSwap(null);
   };
+  // Last resort: drop it from today altogether. Better than standing in the garage
+  // arguing with the app about a movement you can't do.
+  const swapSkip = () => {
+    const from = swap;
+    setS((o) => {
+      if (!o.active) return o;
+      const items = o.active.items.filter((x) => x.id !== from).map((x) => (x.pair === from ? { ...x, pair: null } : x));
+      if (!items.length) return { ...o, active: { ...o.active, items, idx: 0, phase: "done" } };
+      return { ...o, active: { ...o.active, items, idx: clamp(o.active.idx, 0, items.length - 1) } };
+    });
+    setSwap(null);
+  };
   const SwapUI = swap && EX[swap] ? (
     <SwapSheet id={swap} kit={uPlan.equipment || []} swaps={uPlan.swaps || {}} inSession={!!A}
-      onToday={swapToday} onAlways={swapAlways} onClose={() => setSwap(null)} />
+      onToday={swapToday} onAlways={swapAlways} onSkip={swapSkip}
+      onKit={() => { setSwap(null); openPlan(); }} onClose={() => setSwap(null)} />
   ) : null;
 
   if (summary) {
@@ -1665,6 +1762,12 @@ function Train({ s, setS, today, pickDay, setPickDay, openEx }) {
         </div>
         <div className="h2" style={{ fontSize: 24 }}>{plan.title}</div>
         <div className="sub">{plan.sub}</div>
+        {!(uPlan.equipment || []).length && plan.items.some((x) => x.sets) && (
+          <button onClick={openPlan} style={{ display: "block", width: "100%", textAlign: "left", marginTop: 12, padding: "12px 14px", borderRadius: 14, background: C.panel, borderLeft: `3px solid ${C.sun}` }}>
+            <div style={{ fontWeight: 600 }}>No equipment ticked</div>
+            <div className="sub">You're getting bodyweight-only sessions. Tap to add your gear and the programme rebuilds around it.</div>
+          </button>
+        )}
         {needsWarmup(plan.items) && <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "10px 0", borderTop: `1px solid ${C.line}` }}>
           <div style={{ width: 54, height: 54, background: C.panel, borderRadius: 12, padding: 3, flexShrink: 0 }}><Figure pose="hop" /></div>
           <div><div style={{ fontWeight: 600 }}>5 min warm-up + movement block</div><div className="sub">Bike or rower, then {WARMUP.length} moves. Every workout.</div></div>
@@ -2811,7 +2914,7 @@ export default function App() {
       <style>{css}</style>
       {saveErr && <div style={{ background: C.rose, color: C.night, padding: "8px 18px", fontSize: 14 }}>Couldn't save to this phone's storage. Your changes are on screen but won't survive a reload. Private browsing mode is the usual cause.</div>}
       {tab === "today" && <Today s={s} setS={setS} today={today} goTrain={goTrain} openEx={setExOpen} openRoutine={setRoutine} openTight={() => setTightOpen(true)} habitsDone={done} habitsTotal={checks.length} coach={coach} />}
-      {tab === "train" && <Train s={s} setS={setS} today={today} pickDay={pickDay} setPickDay={setPickDay} openEx={setExOpen} />}
+      {tab === "train" && <Train s={s} setS={setS} today={today} pickDay={pickDay} setPickDay={setPickDay} openEx={setExOpen} openPlan={() => setPlanOpen(true)} />}
       {tab === "progress" && <Progress s={s} setS={setS} today={today} />}
       {tab === "library" && <Library openEx={setExOpen} openTight={() => setTightOpen(true)} />}
       {tab === "coach" && <Coach s={s} setS={setS} today={today} openPlan={() => setPlanOpen(true)} />}
